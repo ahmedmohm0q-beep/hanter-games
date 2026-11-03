@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { addDays, isValidISO } from '../../domain/dates';
 import { contains, eachDay, intersect, lastDay, periodFor, planMonths, shiftPeriod, weeksTouching, type Period, type PeriodType } from '../../domain/periods';
 import { commitment, planProgress } from '../../domain/progress';
-import { clipTo, occurrencesFor } from '../../domain/schedule';
+import { clipTo, occurrencesFor, type EvaluatedOccurrence } from '../../domain/schedule';
 import type { GoalLevel, Review } from '../../domain/types';
 import { newRow } from '../../data/model';
 import { aliveGoals, useApp } from '../ctx';
@@ -10,7 +10,7 @@ import { href } from '../router';
 import { Empty, Field, Trail, toast } from '../components/common';
 import { OccurrenceRow } from '../components/OccurrenceRow';
 import { GoalForm, TaskForm } from '../components/Forms';
-import { MetricCards } from './Analytics';
+import { HeatStrip, Reveal, Ring, Sparkline } from '../components/viz';
 import { Camp } from './Year';
 
 const LEVEL_OF: Record<PeriodType, GoalLevel | null> = { day: null, week: 'week', month: 'month', half: 'half', year: 'year' };
@@ -73,6 +73,39 @@ function PeriodGoals({ type, p }: { type: PeriodType; p: Period }) {
   );
 }
 
+/** Same picture as the home screen, filtered to one period: rings, a daily line and a heat strip. */
+function PeriodSummary({ occ, p }: { occ: EvaluatedOccurrence[]; p: Period }) {
+  const { i, today } = useApp();
+  const c = commitment(occ);
+  const pp = planProgress(occ);
+  const days = eachDay(p);
+  // halves are long: summarise by week so the line stays readable
+  const buckets: { key: string; label: string; list: EvaluatedOccurrence[] }[] = days.length > 62
+    ? Array.from({ length: Math.ceil(days.length / 7) }, (_, k) => ({ key: days[k * 7], label: days[k * 7], list: occ.filter((o) => o.date >= days[k * 7] && o.date < (days[k * 7 + 7] ?? p.end)) }))
+    : days.map((d) => ({ key: d, label: d, list: occ.filter((o) => o.date === d && o.kind !== 'quota') }));
+  const pts = buckets.map((b) => (b.key >= today ? null : commitment(b.list).ratio));
+  return (
+    <Reveal>
+      <section className="period-summary">
+        <div className="rings">
+          <Ring value={c.ratio} label={i.t('commitment')} sub={c.ratio == null ? i.t('no_items') : `${i.t('due_count')} ${c.dueCount}`} size={112} />
+          <Ring value={pp.ratio} expected={pp.expected} label={i.t('plan_progress')} sub={pp.expected != null ? `${i.t('expected_by_now')} ${i.pct(pp.expected)}` : undefined} tone="info" size={112} />
+          <Ring value={c.coverage} label={i.t('coverage')} sub={`${i.t('open_count')} ${c.openCount}`} tone="gold" size={112} />
+        </div>
+        {buckets.length > 1 && (
+          <div className="panel trendcard">
+            <Sparkline points={pts} label={i.t('trend')} />
+            <HeatStrip days={buckets.map((b) => {
+              const cc = commitment(b.list);
+              return { date: b.key, ratio: b.key >= today ? null : cc.ratio, recorded: cc.recordedCount > 0 || cc.dueCount === 0, label: `${i.date(b.label, { day: 'numeric', month: 'short' })}: ${cc.ratio == null ? i.t('no_items') : i.pct(cc.ratio)}` };
+            })} />
+          </div>
+        )}
+      </section>
+    </Reveal>
+  );
+}
+
 // ---------------- Day ----------------
 export function DayPage({ date, focus }: { date: string; focus: string | null }) {
   const { data, i, today, opt, plan } = useApp();
@@ -117,9 +150,9 @@ export function WeekPage({ date, monthStart }: { date: string; monthStart: strin
   return (
     <div className="page">
       <PeriodNav type="week" p={p} anchor={d} extra={month ? { month: month.start } : undefined} />
+      <PeriodSummary occ={occ} p={p} />
       <PeriodGoals type="week" p={p} />
       {clip && <div className="banner" style={{ marginBottom: 12 }}>{i.t('week_in_month_note')} ({i.date(clip.start)} → {i.date(lastDay(clip))}) <a href={href(`/week/${p.start}`)}>{i.t('filter_all')}</a></div>}
-      <MetricCards occ={occ} />
       <section className="panel">
         <h2>{i.t('days')}</h2>
         <div className="stack">
@@ -157,8 +190,8 @@ export function MonthPage({ date }: { date: string }) {
   return (
     <div className="page">
       <PeriodNav type="month" p={p} anchor={d} />
+      <PeriodSummary occ={occ} p={p} />
       <PeriodGoals type="month" p={p} />
-      <MetricCards occ={occ} />
       <section className="panel">
         <div className="monthgrid" role="grid" aria-label={i.t('nav_month')}>
           {Array.from({ length: 7 }, (_, k) => <div key={k} className="small muted" style={{ textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{i.weekdays[(ws + k) % 7]}</div>)}
@@ -205,8 +238,8 @@ export function HalfPage({ date }: { date: string }) {
   return (
     <div className="page">
       <PeriodNav type="half" p={p} anchor={d} />
+      <PeriodSummary occ={occ} p={p} />
       <PeriodGoals type="half" p={p} />
-      <MetricCards occ={occ} />
       <section className="panel">
         <div className="grid three">
           {months.map((m) => {

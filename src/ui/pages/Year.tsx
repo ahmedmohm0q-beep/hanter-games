@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { goalProgress } from '../../domain/progress';
-import { planYearRange, lastDay } from '../../domain/periods';
+import { eachDay, planMonths, planYearRange, lastDay } from '../../domain/periods';
 import type { Goal, GoalPoint, Habit, PointBox } from '../../domain/types';
 import { addDays } from '../../domain/dates';
 import { commitment } from '../../domain/progress';
@@ -99,53 +99,100 @@ function SubTree({ goal, open, toggle, depth }: { goal: Goal; open: Set<string>;
   const [habitForm, setHabitForm] = useState(false);
   const children = aliveGoals(data).filter((g) => g.parentId === goal.id && g.status !== 'archived');
   const tasks = data.tasks.filter((t) => t.goalId === goal.id && !t.deletedAt).sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1));
-  const habits = data.habits.filter((h) => h.goalIds.includes(goal.id) && !h.deletedAt && !h.archived);
+  // the root goal already shows its habits as clouds on the road
+  const habits = depth > 1 ? data.habits.filter((h) => h.goalIds.includes(goal.id) && !h.deletedAt && !h.archived) : [];
   const nextLevel = goal.level === 'year' ? 'half' : goal.level === 'half' ? 'month' : 'week';
   return (
-    <div className="stack" style={{ gap: 6 }}>
-      <ul>
+    <>
+      <ul className="tree">
         {children.map((c) => {
           const n = goalProgress(c.id, data, today, opt);
           const isOpen = open.has(c.id);
           return (
-            <li key={c.id} className="subnode" id={`goal-${c.id}`}>
-              <div className="row between">
-                <button className="btn ghost small" aria-expanded={isOpen} onClick={() => toggle(c.id)} style={{ fontWeight: 600 }}>
-                  {isOpen ? '▾' : '▸'} <bdi>{c.title}</bdi> <span className="chip">{i.t(`lv_${c.level}` as 'lv_half')}</span>
-                </button>
-                <span className="small num muted">{c.deadline ? i.date(c.deadline) : ''} · {i.pct(n?.plan.ratio ?? null)}</span>
-              </div>
-              <Trail ratio={n?.plan.ratio ?? null} expected={n?.plan.expected} label={c.title} />
-              {isOpen && <div className="children" style={{ marginTop: 8 }}><SubTree goal={c} open={open} toggle={toggle} depth={depth + 1} /></div>}
-            </li>
-          );
-        })}
-        {tasks.map((t) => {
-          const done = data.logs.some((l) => l.taskId === t.id && !l.deletedAt && l.kind === 'progress');
-          return (
-            <li key={t.id} className="row between subnode">
-              <a href={href(`/day/${t.dueDate}`, { focus: `t:${t.id}` })}>{done ? '✓ ' : '○ '}<bdi>{t.title}</bdi></a>
-              <span className="small num muted">{i.date(t.dueDate)}</span>
+            <li key={c.id} className={`tnode lv-${c.level}`} id={`goal-${c.id}`}>
+              <button className="tcard" aria-expanded={isOpen} onClick={() => toggle(c.id)}>
+                <span className="tcard-head">
+                  <span className="tlevel">{i.t(`lv_${c.level}` as 'lv_half')}</span>
+                  <bdi className="ttitle">{c.title}</bdi>
+                  <span className="tpct num">{i.pct(n?.plan.ratio ?? null)}</span>
+                  <span className="tcaret" aria-hidden>{isOpen ? '−' : '+'}</span>
+                </span>
+                <Trail ratio={n?.plan.ratio ?? null} expected={n?.plan.expected} label={c.title} />
+                {c.deadline && <span className="tdate">{i.date(c.deadline, { day: 'numeric', month: 'short' })}</span>}
+              </button>
+              {isOpen && <SubTree goal={c} open={open} toggle={toggle} depth={depth + 1} />}
             </li>
           );
         })}
         {habits.map((h) => (
-          <li key={h.id} className="row between subnode">
-            <a href={href('/habits', { focus: h.id })}>↻ <bdi>{h.title}</bdi></a>
-            {h.cue && <span className="small muted"><bdi>{h.cue}</bdi></span>}
+          <li key={h.id} className="tnode leaf">
+            <a className="tleaf habit" href={href('/habits', { focus: h.id })}>↻ <bdi>{h.title}</bdi>{h.cue && <span className="muted"> · <bdi>{h.cue}</bdi></span>}</a>
           </li>
         ))}
+        {tasks.map((t) => {
+          const done = data.logs.some((l) => l.taskId === t.id && !l.deletedAt && l.kind === 'progress');
+          return (
+            <li key={t.id} className="tnode leaf">
+              <a className={`tleaf task${done ? ' done' : ''}`} href={href(`/day/${t.dueDate}`, { focus: `t:${t.id}` })}>{done ? '✓' : '○'} <bdi>{t.title}</bdi> <span className="muted num">{i.date(t.dueDate, { day: 'numeric', month: 'short' })}</span></a>
+            </li>
+          );
+        })}
+        <li className="tnode leaf tadd">
+          {goal.level !== 'week' && <button className="tleaf add" onClick={() => setGoalForm(true)}>＋ {i.t(`lv_${nextLevel}` as 'lv_half')}</button>}
+          <button className="tleaf add" onClick={() => setTaskForm(true)}>＋ {i.t('task')}</button>
+          {depth > 1 && <button className="tleaf add" onClick={() => setHabitForm(true)}>＋ {i.t('habit')}</button>}
+        </li>
       </ul>
-      {!children.length && !tasks.length && !habits.length && <p className="small muted" style={{ margin: 0 }}>{i.t('no_children')}</p>}
-      <div className="row">
-        {goal.level !== 'week' && <button className="btn small" onClick={() => setGoalForm(true)}>＋ {i.t('sub_goal')}</button>}
-        <button className="btn small" onClick={() => setTaskForm(true)}>＋ {i.t('task')}</button>
-        <button className="btn small" onClick={() => setHabitForm(true)}>＋ {i.t('habit')}</button>
-      </div>
       {goalForm && <GoalForm defaults={{ parentId: goal.id, level: nextLevel, startDate: goal.startDate, planYearId: goal.planYearId }} onClose={() => setGoalForm(false)} />}
       {taskForm && <TaskForm goalId={goal.id} defaultDate={goal.deadline && goal.deadline < today ? goal.deadline : undefined} onClose={() => setTaskForm(false)} />}
       {habitForm && <HabitForm goalId={goal.id} onClose={() => setHabitForm(false)} />}
-    </div>
+    </>
+  );
+}
+
+/** 366-day map of one annual goal: a row per plan month, a cell per day, coloured by what was done for this goal. */
+function YearGrid({ goal }: { goal: Goal }) {
+  const { data, i, today, opt, plan } = useApp();
+  const cells = useMemo(() => {
+    const ids = new Set<string>([goal.id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const g of data.goals) if (!g.deletedAt && g.parentId && ids.has(g.parentId) && !ids.has(g.id)) { ids.add(g.id); grew = true; }
+    }
+    const habitIds = data.habits.filter((h) => !h.deletedAt && h.goalIds.some((x) => ids.has(x))).map((h) => h.id);
+    const taskIds = data.tasks.filter((t) => !t.deletedAt && ids.has(t.goalId)).map((t) => t.id);
+    const yr = planYearRange(plan!.startDate);
+    const occ = habitIds.length || taskIds.length ? occurrencesFor(data, { range: yr, today, habitIds, taskIds }, opt) : [];
+    const byDay = new Map<string, typeof occ>();
+    for (const o of occ) (byDay.get(o.date) ?? byDay.set(o.date, []).get(o.date)!).push(o);
+    return planMonths(plan!.startDate).map((m) => ({
+      m,
+      days: eachDay(m).map((d) => {
+        const list = byDay.get(d) ?? [];
+        const c = commitment(list);
+        const p = list.length ? list.reduce((s, o) => s + o.contribution, 0) / list.length : null;
+        return { d, due: list.length, ratio: d < today ? c.ratio : p, future: d > today, unrec: d < today && c.dueCount > 0 && c.recordedCount === 0 };
+      }),
+    }));
+  }, [data, goal.id, today, opt, plan]);
+  const doneDays = cells.flatMap((r) => r.days).filter((c) => !c.future && c.ratio != null && c.ratio >= 1).length;
+  return (
+    <section className="yeargrid noswipe" aria-label={i.t('year_map')}>
+      <div className="yg-head"><span>{i.t('year_map')}</span><span className="num muted">{i.t('full_days', { n: doneDays })}</span></div>
+      {cells.map(({ m, days }) => (
+        <div key={m.start} className="yg-row">
+          <span className="yg-label num">{m.index + 1}</span>
+          <div className="yg-cells">
+            {days.map((c) => (
+              <a key={c.d} href={href(`/day/${c.d}`)} title={`${i.date(c.d)}: ${c.due ? i.pct(c.ratio) : i.t('no_items')}`}
+                className={`yg-cell${c.d === today ? ' today' : ''}${c.future ? ' future' : ''}${!c.due ? ' none' : ''}${c.unrec ? ' unrec' : ''}`}
+                style={{ ['--v' as string]: c.ratio ?? 0 }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -260,11 +307,9 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
   const [result, setResult] = useState(false);
   const [menu, setMenu] = useState(false);
   const n = goalProgress(goal.id, data, today, opt);
-  const isOpen = open.has(goal.id);
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   const card = (
-      <div className={`goalcard${isOpen ? ' open' : ''}`} role="button" tabIndex={0} aria-expanded={isOpen}
-        onClick={() => toggle(goal.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && (e.preventDefault(), toggle(goal.id))}>
+      <div className="goalcard">
         <div className="row between">
           <h2 style={{ margin: 0 }}><bdi>{goal.title}</bdi></h2>
           <span className={`chip ${goal.status === 'done' ? 'gold' : goal.status === 'active' ? 'green' : ''}`}>{i.t(`gs_${goal.status}` as 'gs_active')}</span>
@@ -301,11 +346,11 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
     <div className="camp" id={`goal-${goal.id}`}>
       <Station goal={goal} card={card} />
 
-      {isOpen && (
-        <div className="drill panel">
-          <SubTree goal={goal} open={open} toggle={toggle} depth={1} />
-        </div>
-      )}
+      {/* the goal branches into its sub-goals, tasks and (deeper down) habits */}
+      <div className="treewrap">
+        <SubTree goal={goal} open={open} toggle={toggle} depth={1} />
+      </div>
+      {goal.level === 'year' && <YearGrid goal={goal} />}
       {edit && <GoalForm goal={goal} onClose={() => setEdit(false)} />}
       {result && <ResultForm goal={goal} onClose={() => setResult(false)} />}
     </div>

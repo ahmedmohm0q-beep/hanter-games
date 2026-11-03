@@ -596,3 +596,76 @@ body { font-size: 17px; }
   .levelcard { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .levelcard .row { justify-content: center; }
 }
+
+/* =====================================================================
+   v4: calmer type on plan pages, goal tree, 366-day map, period summary
+   ===================================================================== */
+.hero-quote blockquote { font-size: 1.12rem; line-height: 1.8; }
+.hero-quote.en blockquote { font-size: 1.06rem; }
+.hero-quote { padding: 20px 22px 18px; }
+.qmark { font-size: 5rem; }
+
+/* plan pages use a smaller, quieter scale */
+.yeartrail { font-size: 0.9rem; }
+.yeartrail .goalcard h2 { font-size: 1.02rem; }
+.yeartrail .goalcard { padding: 18px 20px 14px; }
+.yeartrail .chip { font-size: 0.74rem; }
+.yeartrail .thought h3 { font-size: 0.85rem; }
+.yeartrail .point textarea { font-size: 0.86rem; }
+.yeartrail .cloud { min-height: 66px; padding: 10px 12px; }
+.yeartrail .cloud-title { font-size: 0.84rem; }
+.yeartrail .btn.small { min-height: 34px; font-size: 0.8rem; }
+.page h1 { font-size: 1.4rem; }
+
+/* goal tree: a vertical trunk with branches to each sub-goal */
+.treewrap { position: relative; z-index: 1; width: min(640px, 100%); margin-top: 26px; }
+.tree { list-style: none; margin: 0; padding: 0 0 0 0; position: relative; }
+.tree .tree { margin-top: 10px; padding-inline-start: 22px; }
+.tree::before { content: ''; position: absolute; inset-inline-start: 10px; top: 0; bottom: 22px; width: 2px; background: color-mix(in srgb, var(--line) 90%, transparent); border-radius: 2px; }
+.tnode { position: relative; padding-inline-start: 30px; margin-top: 10px; }
+.tnode::before { content: ''; position: absolute; inset-inline-start: 10px; top: 24px; width: 18px; height: 2px; background: color-mix(in srgb, var(--line) 90%, transparent); }
+.tnode.leaf::before { top: 18px; }
+.tcard {
+  width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: start; cursor: pointer;
+  padding: 12px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); background: var(--surface); color: var(--text);
+  transition: border-color .2s, transform .2s;
+}
+.tcard:hover { border-color: var(--muted); transform: translateY(-1px); }
+.tcard[aria-expanded='true'] { border-color: color-mix(in srgb, var(--green) 55%, transparent); }
+.tcard-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tlevel { font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; background: var(--raised); color: var(--muted); white-space: nowrap; }
+.lv-half > .tcard .tlevel { background: var(--info-soft); color: var(--info); }
+.lv-month > .tcard .tlevel { background: var(--gold-soft); color: var(--gold); }
+.lv-week > .tcard .tlevel { background: var(--green-soft); color: var(--green); }
+.ttitle { flex: 1; min-width: 0; font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpct { font-size: 0.8rem; color: var(--muted); }
+.tcaret { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--raised); font-weight: 700; }
+.tdate { font-size: 0.72rem; color: var(--muted); }
+.tcard .trail { height: 6px; }
+.tleaf {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 99px; font-size: 0.82rem; text-decoration: none; color: var(--text);
+  background: var(--raised); border: 1px solid transparent; cursor: pointer; max-width: 100%;
+}
+.tleaf.habit { border-color: color-mix(in srgb, var(--green) 35%, transparent); }
+.tleaf.task.done { color: var(--green); }
+.tleaf.add { background: transparent; border: 1px dashed var(--line); color: var(--muted); font: inherit; font-size: 0.8rem; }
+.tadd { display: flex; flex-wrap: wrap; gap: 8px; }
+.tree > .tnode { animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
+
+/* 366-day map: one row per plan month */
+.yeargrid { position: relative; z-index: 1; width: min(640px, 100%); margin-top: 22px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.yg-head { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; margin-bottom: 10px; }
+.yg-row { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); align-items: center; gap: 6px; margin-top: 3px; }
+.yg-label { font-size: 0.66rem; color: var(--muted); text-align: center; }
+.yg-cells { display: grid; grid-template-columns: repeat(31, minmax(0, 1fr)); gap: 2px; }
+.yg-cell { aspect-ratio: 1; border-radius: 3px; background: color-mix(in srgb, var(--green) calc(var(--v) * 100%), var(--raised)); transition: transform .15s; }
+.yg-cell:hover { transform: scale(1.6); position: relative; z-index: 2; }
+.yg-cell.none { background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.yg-cell.future { opacity: .45; }
+.yg-cell.unrec { background: transparent; outline: 1px dashed color-mix(in srgb, var(--alert) 70%, transparent); outline-offset: -1px; }
+.yg-cell.today { outline: 2px solid var(--gold); outline-offset: 0; }
+
+/* period pages: the home picture, filtered to the period */
+.period-summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+.period-summary .rings { padding: 16px 8px; }
+.period-summary .ring-value { font-size: clamp(1rem, 4vw, 1.4rem); }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { OccStatus } from '../../domain/schedule';
 import { useApp } from '../ctx';
 
@@ -86,7 +87,8 @@ export function Dialog({ title, onClose, children, footer }: { title: string; on
       prev?.focus?.();
     };
   }, [onClose]);
-  return (
+  // rendered at <body> level so cards and stacking contexts can never cover it
+  return createPortal(
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog" role="dialog" aria-modal="true" aria-label={title} ref={ref}>
         <div className="row between">
@@ -96,7 +98,8 @@ export function Dialog({ title, onClose, children, footer }: { title: string; on
         {children}
         {footer && <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

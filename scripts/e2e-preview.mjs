@@ -51,13 +51,12 @@ await page.waitForTimeout(300);
 await page.reload();
 await page.locator('.box.fears textarea').first().waitFor();
 check('typed point survives reload exactly', (await page.locator('.box.fears textarea').first().inputValue()) === 'ضيق الوقت قبل الامتحان.\nسطر');
-check('typing in a box does not open the goal list', (await page.locator('.goalcard').first().getAttribute('aria-expanded')) === 'false');
+check('typing in a box keeps the text in the box', (await ta.inputValue()).length > 0);
 await page.waitForTimeout(300);
 
 // open drill-down and add a sub-goal + habit + task
-await page.locator('.goalcard').first().click();
-check('clicking the card opens sub-goals', (await page.locator('.goalcard').first().getAttribute('aria-expanded')) === 'true');
-await page.getByRole('button', { name: '＋ هدف فرعي' }).click();
+check('goal tree and 366-day map show under the yearly goal', (await page.locator('.treewrap .tree').count()) > 0 && (await page.locator('.yeargrid .yg-cell').count()) >= 365);
+await page.getByRole('button', { name: '＋ نصف سنوي' }).click();
 await page.getByLabel('العنوان').fill('إنهاء Section A');
 await page.getByLabel('الموعد النهائي').fill('2026-12-31');
 await page.getByRole('button', { name: 'حفظ' }).click();
