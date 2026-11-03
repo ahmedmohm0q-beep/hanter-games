@@ -1,0 +1,92 @@
+{
+  "status": "sample",
+  "verifiedCount": { "ar": 2, "en": 4 },
+  "targetPerLanguage": 366,
+  "note": "Each text was checked against the linked page on 2026-11-03. All works are in the public domain. Translations marked 'app' were written for HANTER GAMES. Do not add entries without a checkable source URL.",
+  "quotes": [
+    {
+      "id": "en-thoreau-walden-castles",
+      "lang": "en",
+      "text": "If you have built castles in the air, your work need not be lost; that is where they should be. Now put the foundations under them.",
+      "translation": "إن كنتَ قد بنيتَ قصورًا في الهواء، فعملك لم يضِع؛ فهناك مكانها. والآن ضع الأساسات تحتها.",
+      "translationBy": "app",
+      "author": "Henry David Thoreau",
+      "authorAlt": "هنري ديفيد ثورو",
+      "work": "Walden, ch. 18 “Conclusion”",
+      "year": "1854",
+      "sourceUrl": "https://www.literaturepage.com/read/walden-243.html",
+      "sourceNote": "Public domain.",
+      "verifiedOn": "2026-11-03"
+    },
+    {
+      "id": "en-tennyson-ulysses-strive",
+      "lang": "en",
+      "text": "To strive, to seek, to find, and not to yield.",
+      "translation": "أن نجاهد، وأن نسعى، وأن نجد، وألّا نستسلم.",
+      "translationBy": "app",
+      "author": "Alfred, Lord Tennyson",
+      "authorAlt": "ألفريد تينيسون",
+      "work": "Ulysses (final line)",
+      "year": "1842",
+      "sourceUrl": "https://rpo.library.utoronto.ca/poems/ulysses",
+      "sourceNote": "Public domain. The source prints the line in lower case as the end of a sentence; capitalized here as a standalone excerpt.",
+      "verifiedOn": "2026-11-03"
+    },
+    {
+      "id": "en-emerson-self-reliance-trust",
+      "lang": "en",
+      "text": "Trust thyself: every heart vibrates to that iron string.",
+      "translation": "ثِق بنفسك: كل قلبٍ يهتز لذلك الوتر الحديدي.",
+      "translationBy": "app",
+      "author": "Ralph Waldo Emerson",
+      "authorAlt": "رالف والدو إمرسون",
+      "work": "Self-Reliance (Essays: First Series)",
+      "year": "1841",
+      "sourceUrl": "https://anthology.lib.virginia.edu/work/Emerson/emerson-self-reliance",
+      "sourceNote": "Public domain.",
+      "verifiedOn": "2026-11-03"
+    },
+    {
+      "id": "en-shakespeare-measure-doubts",
+      "lang": "en",
+      "text": "Our doubts are traitors, / And make us lose the good we oft might win, / By fearing to attempt.",
+      "translation": "شكوكنا خونة، تُضيّع علينا الخير الذي كان يمكن أن نكسبه، لأننا نخاف أن نحاول.",
+      "translationBy": "app",
+      "author": "William Shakespeare",
+      "authorAlt": "وليم شكسبير",
+      "work": "Measure for Measure, Act 1, Scene 4 (Lucio)",
+      "year": "c. 1603–1604",
+      "sourceUrl": "https://absoluteshakespeare.com/plays/measure_for_measure/a1s4.htm",
+      "sourceNote": "Public domain. Punctuation follows the linked edition; other editions omit the comma after “win”.",
+      "verifiedOn": "2026-11-03"
+    },
+    {
+      "id": "ar-mutanabbi-ghamarta",
+      "lang": "ar",
+      "text": "إِذا غامَرتَ في شَرَفٍ مَرومٍ ... فَلا تَقنَع بِما دونَ النُجومِ",
+      "translation": "If you venture after a coveted honor, do not settle for anything below the stars.",
+      "translationBy": "app",
+      "author": "أبو الطيب المتنبي",
+      "authorAlt": "Abu al-Tayyib al-Mutanabbi",
+      "work": "قصيدة «إذا غامرت في شرف مروم» — الديوان",
+      "year": "القرن الرابع الهجري / 10th century",
+      "sourceUrl": "https://www.aldiwan.net/poem10566.html",
+      "sourceNote": "ملكية عامة. النص كما في صفحة الديوان المرتبطة.",
+      "verifiedOn": "2026-11-03"
+    },
+    {
+      "id": "ar-shabbi-iradat-al-hayat-jibal",
+      "lang": "ar",
+      "text": "ومن لا يحبُّ صُعودَ الجبالِ ... يَعِشْ أبَدَ الدَّهرِ بَيْنَ الحُفَرْ",
+      "translation": "Whoever does not love climbing mountains will live forever among the pits.",
+      "translationBy": "app",
+      "author": "أبو القاسم الشابي",
+      "authorAlt": "Abu al-Qasim al-Shabbi",
+      "work": "قصيدة «إرادة الحياة» — ديوان «أغاني الحياة»",
+      "year": "1933",
+      "sourceUrl": "https://adabworld.com/poems/idha-alshab-ywma-arad-alhyah-aqlyegrq",
+      "sourceNote": "ملكية عامة (توفي الشاعر 1934). تشتهر رواية «ومن يتهيّب صعود الجبال»؛ المعروض هنا هو نص المصدر المرتبط.",
+      "verifiedOn": "2026-11-03"
+    }
+  ]
+}
