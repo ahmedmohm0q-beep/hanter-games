@@ -2,8 +2,8 @@
 export const ar = {
   appName: 'HANTER GAMES',
   nav_dashboard: 'الرئيسية', nav_day: 'اليوم', nav_week: 'الأسبوع', nav_month: 'الشهر', nav_half: 'نصف السنة',
-  nav_year: 'السنة', nav_analytics: 'التحليلات', nav_habits: 'مكتبة العادات', nav_settings: 'الإعدادات', nav_reviews: 'المراجعات',
-  today: 'اليوم', prev: 'السابق', next: 'التالي', back: 'رجوع', save: 'حفظ', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل',
+  nav_year: 'السنة', nav_analytics: 'التحليلات', nav_habits: 'مكتبة العادات', nav_settings: 'الإعدادات', nav_reviews: 'المراجعات', nav_more: 'المزيد',
+  today: 'اليوم', prev: 'السابق', next: 'التالي', back: 'رجوع', save: 'حفظ', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', more_actions: 'خيارات أكثر',
   add: 'إضافة', close: 'إغلاق', archive: 'أرشفة', unarchive: 'استعادة', details: 'التفاصيل', apply: 'تطبيق', retry: 'إعادة المحاولة',
   date: 'التاريخ', loading: 'جارٍ التحميل…', none: '—', optional: 'اختياري',
   // sync
@@ -129,8 +129,8 @@ export type Strings = typeof ar;
 export const en: Strings = {
   appName: 'HANTER GAMES',
   nav_dashboard: 'Dashboard', nav_day: 'Day', nav_week: 'Week', nav_month: 'Month', nav_half: 'Half-year',
-  nav_year: 'Year', nav_analytics: 'Analytics', nav_habits: 'Habit library', nav_settings: 'Settings', nav_reviews: 'Reviews',
-  today: 'Today', prev: 'Previous', next: 'Next', back: 'Back', save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit',
+  nav_year: 'Year', nav_analytics: 'Analytics', nav_habits: 'Habit library', nav_settings: 'Settings', nav_reviews: 'Reviews', nav_more: 'More',
+  today: 'Today', prev: 'Previous', next: 'Next', back: 'Back', save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', more_actions: 'More actions',
   add: 'Add', close: 'Close', archive: 'Archive', unarchive: 'Restore', details: 'Details', apply: 'Apply', retry: 'Retry',
   date: 'Date', loading: 'Loading…', none: '—', optional: 'optional',
   sync_saved: 'Saved', sync_saving: 'Saving…', sync_error: 'Save failed', sync_offline: 'Offline — will resend',

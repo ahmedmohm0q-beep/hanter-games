@@ -258,6 +258,7 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
   const { data, i, today, opt, save } = useApp();
   const [edit, setEdit] = useState(false);
   const [result, setResult] = useState(false);
+  const [menu, setMenu] = useState(false);
   const n = goalProgress(goal.id, data, today, opt);
   const isOpen = open.has(goal.id);
   const stop = (e: React.MouseEvent) => e.stopPropagation();
@@ -274,20 +275,25 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
               {i.date(goal.deadline)} · {n?.daysLeft != null && (n.daysLeft >= 0 ? i.t('days_left', { n: n.daysLeft }) : i.t('overdue_days', { n: -n.daysLeft }))}
             </span>
           ) : <button className="chip warn" onClick={(e) => { stop(e); setEdit(true); }}>{i.t('set_deadline')}</button>}
-          <span className="chip">{i.t(`p${goal.priority}` as 'p1')}</span>
-          {n?.outcome.achieved ? <span className="chip gold">★ {i.t('outcome_achieved')}</span> : <span className="chip">{i.t('outcome_not_yet')}</span>}
+          {goal.priority === 1 && <span className="chip">{i.t('p1')}</span>}
+          {n?.outcome.achieved && <span className="chip gold">★ {i.t('outcome_achieved')}</span>}
         </div>
         {n?.outsidePlanYear && <div className="banner warn small" style={{ marginBottom: 8 }}>{i.t('outside_year')}</div>}
         <Trail ratio={n?.plan.ratio ?? null} expected={n?.plan.expected} label={i.t('plan_progress')} />
-        <div className="row between small" style={{ marginTop: 6 }}>
-          <span>{i.t('plan_progress')}: <span className="num">{i.pct(n?.plan.ratio ?? null)}</span> · {i.t('commitment')}: <span className="num">{n?.commit.ratio == null ? i.t('no_items') : i.pct(n.commit.ratio)}</span></span>
-          <span className="row" style={{ gap: 4 }} onClick={stop}>
-            <button className="btn small ghost" onClick={() => setResult(true)}>{i.t('record_result')}</button>
-            <button className="btn small ghost" onClick={() => setEdit(true)}>{i.t('edit')}</button>
-            <button className="btn small ghost" disabled={first} onClick={() => onMove(-1)} aria-label={i.t('move_up')}>▲</button>
-            <button className="btn small ghost" disabled={last} onClick={() => onMove(1)} aria-label={i.t('move_down')}>▼</button>
-            <button className="btn small ghost" onClick={() => save('goals', { ...goal, status: 'archived' })}>{i.t('archive')}</button>
-          </span>
+        <div className="cardfoot">
+          <span className="small muted">{i.t('plan_progress')} <b className="num">{i.pct(n?.plan.ratio ?? null)}</b> · {i.t('commitment')} <b className="num">{n?.commit.ratio == null ? '—' : i.pct(n.commit.ratio)}</b></span>
+          <div className="menuwrap" onClick={stop}>
+            <button className="btn small ghost icon" aria-label={i.t('more_actions')} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>⋯</button>
+            {menu && (
+              <div className="menu" role="menu" onMouseLeave={() => setMenu(false)}>
+                <button role="menuitem" onClick={() => { setMenu(false); setResult(true); }}>{i.t('record_result')}</button>
+                <button role="menuitem" onClick={() => { setMenu(false); setEdit(true); }}>{i.t('edit')}</button>
+                <button role="menuitem" disabled={first} onClick={() => { setMenu(false); onMove(-1); }}>▲ {i.t('move_up')}</button>
+                <button role="menuitem" disabled={last} onClick={() => { setMenu(false); onMove(1); }}>▼ {i.t('move_down')}</button>
+                <button role="menuitem" onClick={() => { setMenu(false); save('goals', { ...goal, status: 'archived' }); }}>{i.t('archive')}</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
   );

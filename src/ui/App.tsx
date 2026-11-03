@@ -224,6 +224,8 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
   const { data, i, today, opt, repo, fromCache, syncedAt } = useApp();
   const route = useRoute();
   const section = route.path[0] ?? '';
+  const [more, setMore] = useState(false);
+  useEffect(() => setMore(false), [section]);
   const xp = useMemo(() => (data.settings.gamification ? totalXP(entitlements(occurrencesFor(data, { range: { start: '2000-01-01', end: addDays(today, 1) }, today }, opt), data)) : 0), [data, today, opt]);
   const lv = levelFor(xp);
   const prevLevel = useRef(lv.level);
@@ -236,11 +238,17 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
 
   const linkFor = (p: string) => (['/day', '/week', '/month', '/half'].includes(p) ? `${p}/${today}` : p);
   const isCurrent = (p: string) => (p === '/' ? section === '' : `/${section}` === p);
-  const nav = NAV.map((n) => (
-    <a key={n.key} className="navlink" href={href(linkFor(n.path))} aria-current={isCurrent(n.path) ? 'page' : undefined}>
-      <span aria-hidden>{n.icon}</span><span>{i.t(n.key as 'nav_day')}</span>
+  const link = (n: (typeof NAV)[number], onClick?: () => void) => (
+    <a key={n.key} className="navlink" href={href(linkFor(n.path))} aria-current={isCurrent(n.path) ? 'page' : undefined} onClick={onClick}>
+      <span className="navicon" aria-hidden>{n.icon}</span><span className="navlabel">{i.t(n.key as 'nav_day')}</span>
     </a>
-  ));
+  );
+  const nav = NAV.map((n) => link(n));
+  // phones: four main places + "more", so the bar never scrolls sideways
+  const PRIMARY = ['/', '/day', '/year', '/analytics'];
+  const primary = NAV.filter((n) => PRIMARY.includes(n.path));
+  const secondary = NAV.filter((n) => !PRIMARY.includes(n.path));
+  const moreActive = secondary.some((n) => isCurrent(n.path));
   const arg = route.path[1] ?? today;
   let page: React.ReactNode;
   switch (section) {
@@ -257,20 +265,32 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
   return (
     <div className="shell">
       <aside className="side" aria-label="navigation">
-        <a className="brand" href="#/" style={{ color: 'inherit', textDecoration: 'none' }}><img src="icons/logo.svg" alt="" /> HANTER GAMES</a>
+        <a className="brand" href="#/" style={{ color: 'inherit', textDecoration: 'none' }}><img src="icons/logo.svg" alt="" /> <span className="navlabel">HANTER GAMES</span></a>
         {nav}
         <div className="spacer" />
       </aside>
       <div className="main">
         <header className="topbar">
           <SyncChip />
-          {data.settings.gamification && <span className="chip gold num" title={i.t('xp_note')}>{i.t('xp_level', { n: lv.level })} · {i.t('xp', { n: xp })}</span>}
+          {data.settings.gamification && <span className="chip gold num xpchip" title={i.t('xp_note')}>{i.t('xp_level', { n: lv.level })} · {i.t('xp', { n: xp })}</span>}
         </header>
         {repo.mode === 'demo' && <div className="banner gold" style={{ margin: '12px 28px 0' }}>{i.t('demo_banner')} <button className="btn small ghost" onClick={onLeave}>{i.t('leave_demo')}</button></div>}
         {fromCache && syncedAt && <div className="banner warn" style={{ margin: '12px 28px 0' }}>{i.t('cachedData', { t: i.dateTime(syncedAt) })}</div>}
         <main key={section}>{page}</main>
       </div>
-      <nav className="mobilenav" aria-label="navigation">{nav}</nav>
+      <nav className="mobilenav" aria-label="navigation">
+        {primary.map((n) => link(n))}
+        <button className="navlink" aria-current={moreActive ? 'page' : undefined} aria-expanded={more} onClick={() => setMore((m) => !m)}>
+          <span className="navicon" aria-hidden>☰</span><span className="navlabel">{i.t('nav_more')}</span>
+        </button>
+      </nav>
+      {more && (
+        <div className="sheet-backdrop" onClick={() => setMore(false)}>
+          <nav className="sheet" aria-label={i.t('nav_more')} onClick={(e) => e.stopPropagation()}>
+            {secondary.map((n) => link(n, () => setMore(false)))}
+          </nav>
+        </div>
+      )}
       <Toasts />
       <ConflictDialogs />
     </div>
