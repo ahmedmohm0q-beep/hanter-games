@@ -1,0 +1,98 @@
+# Builds installable packages and attaches them to a GitHub Release:
+#   HANTER-GAMES.apk          → Android phone
+#   HANTER-GAMES-Setup.exe    → Windows laptop
+# Uses the same repository variables as the web deploy: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
+name: Build app packages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm install --no-audit --no-fund
+      - name: Build web app
+        run: npx vite build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Wrap in Android project (Capacitor)
+        run: |
+          npm install --no-save --no-audit --no-fund @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          npx cap add android
+          ./scripts/android-icons.sh
+          npx cap sync android
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../HANTER-GAMES.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: HANTER-GAMES.apk
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Build web app
+        run: npx vite build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Package Windows installer (Electron)
+        shell: bash
+        run: |
+          npm install --no-save --no-audit --no-fund electron electron-builder
+          npx electron-builder --win nsis --publish never \
+            -c.appId=com.ahmed.hantergames -c.productName="HANTER GAMES" \
+            -c.extraMetadata.main=electron/main.cjs \
+            -c.files="dist/**" -c.files="electron/**" -c.files="package.json" \
+            -c.win.icon=public/icons/icon-512.png \
+            -c.nsis.oneClick=false -c.nsis.allowToChangeInstallationDirectory=true \
+            -c.nsis.artifactName="HANTER-GAMES-Setup.exe" \
+            -c.directories.output=release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/HANTER-GAMES-Setup.exe
+
+  release:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: HANTER GAMES — build ${{ github.run_number }}
+          body: |
+            حمّل الملف المناسب لجهازك:
+            - **HANTER-GAMES.apk** — تلفون أندرويد
+            - **HANTER-GAMES-Setup.exe** — لابتوب ويندوز
+          files: |
+            out/HANTER-GAMES.apk
+            out/HANTER-GAMES-Setup.exe

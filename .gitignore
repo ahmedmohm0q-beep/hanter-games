@@ -4,3 +4,6 @@ dist
 .env.local
 .env.*.local
 *.log
+android
+release
+dist-preview

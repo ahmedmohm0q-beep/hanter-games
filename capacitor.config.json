@@ -1,0 +1,6 @@
+{
+  "appId": "com.ahmed.hantergames",
+  "appName": "HANTER GAMES",
+  "webDir": "dist",
+  "android": { "allowMixedContent": false }
+}

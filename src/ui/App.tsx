@@ -28,6 +28,8 @@ const readMode = (): Mode | null => {
 const writeMode = (m: Mode | null) => {
   try { m ? localStorage.setItem(MODE_KEY, m) : localStorage.removeItem(MODE_KEY); } catch { /* ignore */ }
 };
+// running inside the Android (Capacitor) or Windows (Electron) package rather than a browser
+export const IS_PACKAGED = typeof window !== 'undefined' && (location.protocol === 'file:' || !!(window as unknown as { Capacitor?: unknown }).Capacitor);
 export const IS_PREVIEW = typeof window !== 'undefined' && !!(window as unknown as { __HG_PREVIEW__?: boolean }).__HG_PREVIEW__;
 
 function applyChrome(locale: 'ar' | 'en', theme: string, motion: string) {
@@ -155,8 +157,8 @@ function AuthScreen({ onLocal, onDemo }: { onLocal: () => void; onDemo: () => vo
         <Field label={i.t('password')}><input className="input" type="password" dir="ltr" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} /></Field>
         <div className="row">
           <button className="btn primary" disabled={busy || !pw}>{i.t('sign_in')}</button>
-          <button type="button" className="btn" disabled={busy || !pw} onClick={() => run((c) => c.auth.signUp({ email, password: pw, options: { emailRedirectTo: location.origin + location.pathname } }), i.t('magic_sent'))}>{i.t('sign_up')}</button>
-          <button type="button" className="btn ghost" disabled={busy || !email} onClick={() => run((c) => c.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }), i.t('magic_sent'))}>{i.t('magic_link')}</button>
+          <button type="button" className="btn" disabled={busy || !pw} onClick={() => run((c) => c.auth.signUp({ email, password: pw, options: IS_PACKAGED ? undefined : { emailRedirectTo: location.origin + location.pathname } }), i.t('magic_sent'))}>{i.t('sign_up')}</button>
+          {!IS_PACKAGED && <button type="button" className="btn ghost" disabled={busy || !email} onClick={() => run((c) => c.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }), i.t('magic_sent'))}>{i.t('magic_link')}</button>}
         </div>
         {msg && <div className="banner" role="status">{msg}</div>}
       </form>
