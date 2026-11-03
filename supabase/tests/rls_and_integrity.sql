@@ -44,6 +44,31 @@ do $$ declare n text; begin
   if n <> 'from device A' then raise exception 'T3b FAILED: %', n; end if;
 end $$;
 
+-- T9: supabase-js style upsert (INSERT ... ON CONFLICT DO UPDATE with EXCLUDED values):
+-- consecutive edits from one device succeed; a stale edit is still rejected.
+insert into public.goals (id, plan_year_id, level, title, start_date, version, last_mutation_id)
+  values ('bbbbbbbb-0000-0000-0000-000000000009', 'aaaaaaaa-0000-0000-0000-000000000001', 'year', 'v1', '2026-11-15', 1, gen_random_uuid())
+  on conflict (id) do update set title = excluded.title, version = excluded.version, last_mutation_id = excluded.last_mutation_id;
+insert into public.goals (id, plan_year_id, level, title, start_date, version, last_mutation_id)
+  values ('bbbbbbbb-0000-0000-0000-000000000009', 'aaaaaaaa-0000-0000-0000-000000000001', 'year', 'v2', '2026-11-15', 1, gen_random_uuid())
+  on conflict (id) do update set title = excluded.title, version = excluded.version, last_mutation_id = excluded.last_mutation_id;
+insert into public.goals (id, plan_year_id, level, title, start_date, version, last_mutation_id)
+  values ('bbbbbbbb-0000-0000-0000-000000000009', 'aaaaaaaa-0000-0000-0000-000000000001', 'year', 'v3', '2026-11-15', 2, gen_random_uuid())
+  on conflict (id) do update set title = excluded.title, version = excluded.version, last_mutation_id = excluded.last_mutation_id;
+do $$ declare t text; v int; begin
+  select title, version into t, v from public.goals where id = 'bbbbbbbb-0000-0000-0000-000000000009';
+  if t <> 'v3' or v <> 3 then raise exception 'T9 FAILED: title=% version=%', t, v; end if;
+  begin
+    insert into public.goals (id, plan_year_id, level, title, start_date, version, last_mutation_id)
+      values ('bbbbbbbb-0000-0000-0000-000000000009', 'aaaaaaaa-0000-0000-0000-000000000001', 'year', 'stale', '2026-11-15', 2, gen_random_uuid())
+      on conflict (id) do update set title = excluded.title, version = excluded.version, last_mutation_id = excluded.last_mutation_id;
+    raise exception 'T9b FAILED: stale upsert accepted';
+  exception when others then
+    if sqlerrm <> 'version_conflict' then raise; end if;
+  end;
+  raise notice 'T9 ok: consecutive upserts succeed, stale upsert rejected';
+end $$;
+
 -- Switch to user 2
 select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false);
 
