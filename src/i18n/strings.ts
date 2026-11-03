@@ -39,7 +39,7 @@ export const ar = {
   sg_planFirst: 'أضف أول هدف لسنتك', sg_none: 'لا شيء مستحق الآن. يمكنك مراجعة خطة الأسبوع.', sg_reviewLoad: 'راجع حجم العمل',
   quotes_title: 'اقتباس اليوم', translation_app: 'ترجمة التطبيق', translation_published: 'ترجمة منشورة', source: 'المصدر',
   quote_repeated: 'مُعاد: المكتبة الموثّقة لم تكتمل بعد ({n} اقتباسات).', quote_none: 'لا توجد اقتباسات موثقة بهذه اللغة بعد.',
-  daily_action: 'إجراء اليوم', commit_today: 'التزام آخر {n} يوم',
+  daily_action: 'إجراء اليوم', last_n_days: 'آخر {n} يوم', commit_today: 'التزام آخر {n} يوم',
   // goals
   goal: 'هدف', goals: 'الأهداف', new_goal: 'هدف جديد', sub_goal: 'هدف فرعي', title: 'العنوان', description: 'الوصف',
   start_date: 'تاريخ البداية', deadline: 'الموعد النهائي', deadline_time: 'الوقت', time_zone: 'المنطقة الزمنية',
@@ -161,7 +161,7 @@ export const en: Strings = {
   sg_planFirst: 'Add your first goal for the year', sg_none: 'Nothing due right now. You could review this week’s plan.', sg_reviewLoad: 'Review your workload',
   quotes_title: 'Quote of the day', translation_app: 'App translation', translation_published: 'Published translation', source: 'Source',
   quote_repeated: 'Repeated: the verified library isn’t complete yet ({n} quotes).', quote_none: 'No verified quotes in this language yet.',
-  daily_action: 'Today’s action', commit_today: 'Commitment, last {n} days',
+  daily_action: 'Today’s action', last_n_days: 'Last {n} days', commit_today: 'Commitment, last {n} days',
   goal: 'Goal', goals: 'Goals', new_goal: 'New goal', sub_goal: 'Sub-goal', title: 'Title', description: 'Description',
   start_date: 'Start date', deadline: 'Deadline', deadline_time: 'Time', time_zone: 'Time zone',
   success_metric: 'Success metric', success_desc: 'Outcome description', target: 'Target', priority: 'Priority', weight: 'Weight',

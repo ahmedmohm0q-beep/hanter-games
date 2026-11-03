@@ -202,17 +202,6 @@ function Onboarding() {
   );
 }
 
-const NAV: { key: string; path: string; icon: string }[] = [
-  { key: 'nav_dashboard', path: '/', icon: '◎' },
-  { key: 'nav_day', path: '/day', icon: '☀' },
-  { key: 'nav_week', path: '/week', icon: '▤' },
-  { key: 'nav_month', path: '/month', icon: '▦' },
-  { key: 'nav_half', path: '/half', icon: '◐' },
-  { key: 'nav_year', path: '/year', icon: '⛰' },
-  { key: 'nav_analytics', path: '/analytics', icon: '↗' },
-  { key: 'nav_habits', path: '/habits', icon: '↻' },
-  { key: 'nav_settings', path: '/settings', icon: '⚙' },
-];
 
 function Gate({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => void }) {
   const { data, plan } = useApp();
@@ -224,8 +213,6 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
   const { data, i, today, opt, repo, fromCache, syncedAt } = useApp();
   const route = useRoute();
   const section = route.path[0] ?? '';
-  const [more, setMore] = useState(false);
-  useEffect(() => setMore(false), [section]);
   const xp = useMemo(() => (data.settings.gamification ? totalXP(entitlements(occurrencesFor(data, { range: { start: '2000-01-01', end: addDays(today, 1) }, today }, opt), data)) : 0), [data, today, opt]);
   const lv = levelFor(xp);
   const prevLevel = useRef(lv.level);
@@ -238,17 +225,49 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
 
   const linkFor = (p: string) => (['/day', '/week', '/month', '/half'].includes(p) ? `${p}/${today}` : p);
   const isCurrent = (p: string) => (p === '/' ? section === '' : `/${section}` === p);
-  const link = (n: (typeof NAV)[number], onClick?: () => void) => (
-    <a key={n.key} className="navlink" href={href(linkFor(n.path))} aria-current={isCurrent(n.path) ? 'page' : undefined} onClick={onClick}>
-      <span className="navicon" aria-hidden>{n.icon}</span><span className="navlabel">{i.t(n.key as 'nav_day')}</span>
-    </a>
-  );
-  const nav = NAV.map((n) => link(n));
-  // phones: four main places + "more", so the bar never scrolls sideways
-  const PRIMARY = ['/', '/day', '/year', '/analytics'];
-  const primary = NAV.filter((n) => PRIMARY.includes(n.path));
-  const secondary = NAV.filter((n) => !PRIMARY.includes(n.path));
-  const moreActive = secondary.some((n) => isCurrent(n.path));
+  // Swipeable main tabs, in order: home → year → half → month → week → day
+  const TABS = [
+    { path: '/', key: 'nav_dashboard' }, { path: '/year', key: 'nav_year' }, { path: '/half', key: 'nav_half' },
+    { path: '/month', key: 'nav_month' }, { path: '/week', key: 'nav_week' }, { path: '/day', key: 'nav_day' },
+  ] as const;
+  const tabIndex = TABS.findIndex((t) => isCurrent(t.path));
+  const prevTab = useRef(tabIndex);
+  const [dir, setDir] = useState<'fwd' | 'back' | 'none'>('none');
+  useEffect(() => {
+    if (tabIndex >= 0 && prevTab.current >= 0 && tabIndex !== prevTab.current) setDir(tabIndex > prevTab.current ? 'fwd' : 'back');
+    else setDir('none');
+    prevTab.current = tabIndex;
+  }, [tabIndex]);
+  const goTab = (k: number) => {
+    const t = TABS[k];
+    if (t) window.location.hash = href(linkFor(t.path)).slice(1);
+  };
+  // swipe between tabs (ignored inside inputs, tables, calendars and dialogs)
+  const touch = useRef<{ x: number; y: number; ok: boolean } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.target as HTMLElement;
+    const blocked = !!t.closest('input, textarea, select, .tablewrap, .monthgrid, .dialog, .sheet, .menu, .noswipe');
+    touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ok: !blocked && tabIndex >= 0 };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s0 = touch.current;
+    touch.current = null;
+    if (!s0?.ok) return;
+    const dx = e.changedTouches[0].clientX - s0.x;
+    const dy = e.changedTouches[0].clientY - s0.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+    const forward = i.dir === 'rtl' ? dx > 0 : dx < 0; // RTL: the next tab sits to the left
+    goTab(tabIndex + (forward ? 1 : -1));
+  };
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [ink, setInk] = useState({ x: 0, w: 0 });
+  useEffect(() => {
+    const el = tabsRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    const box = tabsRef.current;
+    if (!el || !box) { setInk({ x: 0, w: 0 }); return; }
+    setInk({ x: el.offsetLeft, w: el.offsetWidth });
+    el.scrollIntoView?.({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [tabIndex, i.dir]);
   const arg = route.path[1] ?? today;
   let page: React.ReactNode;
   switch (section) {
@@ -263,34 +282,33 @@ function Shell({ onSignOut, onLeave }: { onSignOut: () => void; onLeave: () => v
     default: page = <Dashboard />;
   }
   return (
-    <div className="shell">
-      <aside className="side" aria-label="navigation">
-        <a className="brand" href="#/" style={{ color: 'inherit', textDecoration: 'none' }}><img src="icons/logo.svg" alt="" /> <span className="navlabel">HANTER GAMES</span></a>
-        {nav}
-        <div className="spacer" />
-      </aside>
-      <div className="main">
-        <header className="topbar">
-          <SyncChip />
+    <div className="app">
+      <header className="appbar topbar">
+        <a className="wordmark" href="#/" aria-label="HANTER GAMES">
+          <svg className="logo-draw" viewBox="0 0 512 512" aria-hidden>
+            <path className="lg-ridge" d="M96 392 L196 252 L252 312 L328 196 L416 392" />
+            <path className="lg-pole" d="M328 196 V104" />
+            <path className="lg-flag" d="M332 106 L404 128 L332 152 Z" />
+          </svg>
+          <span className="wm-text">HANTER <b>GAMES</b></span>
+        </a>
+        <div className="appbar-actions">
           {data.settings.gamification && <span className="chip gold num xpchip" title={i.t('xp_note')}>{i.t('xp_level', { n: lv.level })} · {i.t('xp', { n: xp })}</span>}
-        </header>
-        {repo.mode === 'demo' && <div className="banner gold" style={{ margin: '12px 28px 0' }}>{i.t('demo_banner')} <button className="btn small ghost" onClick={onLeave}>{i.t('leave_demo')}</button></div>}
-        {fromCache && syncedAt && <div className="banner warn" style={{ margin: '12px 28px 0' }}>{i.t('cachedData', { t: i.dateTime(syncedAt) })}</div>}
-        <main key={section}>{page}</main>
-      </div>
-      <nav className="mobilenav" aria-label="navigation">
-        {primary.map((n) => link(n))}
-        <button className="navlink" aria-current={moreActive ? 'page' : undefined} aria-expanded={more} onClick={() => setMore((m) => !m)}>
-          <span className="navicon" aria-hidden>☰</span><span className="navlabel">{i.t('nav_more')}</span>
-        </button>
-      </nav>
-      {more && (
-        <div className="sheet-backdrop" onClick={() => setMore(false)}>
-          <nav className="sheet" aria-label={i.t('nav_more')} onClick={(e) => e.stopPropagation()}>
-            {secondary.map((n) => link(n, () => setMore(false)))}
-          </nav>
+          <a className="iconbtn" href={href('/analytics')} aria-label={i.t('nav_analytics')} aria-current={isCurrent('/analytics') ? 'page' : undefined}>↗</a>
+          <a className="iconbtn" href={href('/habits')} aria-label={i.t('nav_habits')} aria-current={isCurrent('/habits') ? 'page' : undefined}>↻</a>
+          <a className="iconbtn" href={href('/settings')} aria-label={i.t('nav_settings')} aria-current={isCurrent('/settings') ? 'page' : undefined}>⚙</a>
         </div>
-      )}
+        <div className="appbar-sync"><SyncChip /></div>
+        <nav className="tabs" ref={tabsRef} aria-label="navigation">
+          {TABS.map((t) => (
+            <a key={t.path} href={href(linkFor(t.path))} aria-current={isCurrent(t.path) ? 'page' : undefined}>{i.t(t.key)}</a>
+          ))}
+          <span className="tabs-ink" style={{ transform: `translateX(${ink.x}px)`, width: ink.w, opacity: ink.w ? 1 : 0 }} aria-hidden />
+        </nav>
+      </header>
+      {repo.mode === 'demo' && <div className="banner gold demo-banner">{i.t('demo_banner')} <button className="btn small ghost" onClick={onLeave}>{i.t('leave_demo')}</button></div>}
+      {fromCache && syncedAt && <div className="banner warn demo-banner">{i.t('cachedData', { t: i.dateTime(syncedAt) })}</div>}
+      <main key={section + (route.path[1] ?? '')} className={`view enter-${dir}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>{page}</main>
       <Toasts />
       <ConflictDialogs />
     </div>

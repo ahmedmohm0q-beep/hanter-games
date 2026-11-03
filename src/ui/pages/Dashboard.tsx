@@ -2,20 +2,22 @@ import { useEffect, useMemo, useState } from 'react';
 import library from '../../../quotes/library.json';
 import { addDays } from '../../domain/dates';
 import { dayPeriod } from '../../domain/periods';
-import { goalProgress } from '../../domain/progress';
+import { commitment, goalProgress, planProgress } from '../../domain/progress';
+import { planYearRange } from '../../domain/periods';
+import { recoveries, trend } from '../../domain/trend';
+import { badges, entitlements, levelFor, totalXP } from '../../domain/rewards';
 import { occurrencesFor } from '../../domain/schedule';
 import { quoteForDay, type Quote } from '../../domain/quotes';
 import { suggestNext } from '../../domain/suggest';
 import { newRow } from '../../data/model';
 import { aliveGoals, useApp } from '../ctx';
 import { href } from '../router';
-import { Empty, Trail } from '../components/common';
-import { OccurrenceRow } from '../components/OccurrenceRow';
-import { TrendCard } from './Analytics';
+import { Trail } from '../components/common';
+import { HeatStrip, Reveal, Ring, Sparkline } from '../components/viz';
 
 export const QUOTES = (library as { quotes: Quote[] }).quotes;
 
-function QuoteCard({ lang }: { lang: 'ar' | 'en' }) {
+export function QuoteCard({ lang }: { lang: 'ar' | 'en' }) {
   const { data, i, today, plan, save } = useApp();
   const dq = quoteForDay(QUOTES, lang, today, plan!.startDate, data.quoteViews);
   // record what was shown, so every device shows the same quote today
@@ -61,6 +63,44 @@ function ReminderBanner({ open }: { open: number }) {
   return <div className="banner warn row between" role="status" style={{ marginBottom: 14 }}><span>{i.t('reminder_banner', { n: open })}</span><button className="btn small ghost" onClick={() => setShown(false)}>{i.t('close')}</button></div>;
 }
 
+function QuoteWords({ text }: { text: string }) {
+  // each line, then each word, fades in with a small stagger (skipped with reduced motion)
+  let k = 0;
+  return (
+    <>
+      {text.split(/ \/ | \.\.\. /).map((line, li) => (
+        <span key={li} className="qline">
+          {line.split(' ').map((w, wi) => <span key={wi} className="qword" style={{ ['--w' as string]: k++ }}>{w}{' '}</span>)}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function HeroQuote({ lang }: { lang: 'ar' | 'en' }) {
+  const { data, i, today, plan, save } = useApp();
+  const dq = quoteForDay(QUOTES, lang, today, plan!.startDate, data.quoteViews);
+  useEffect(() => {
+    if (!dq.quote) return;
+    if (data.quoteViews.some((v) => v.date === today && v.lang === lang && !v.deletedAt)) return;
+    save('quoteViews', { ...newRow(), date: today, lang, quoteId: dq.quote.id });
+  }, [today, lang, dq.quote?.id]); // eslint-disable-line
+  if (!dq.quote) return null;
+  const q = dq.quote;
+  return (
+    <figure className={`hero-quote ${lang}`} key={q.id + today}>
+      <span className="qmark" aria-hidden>{lang === 'ar' ? '«' : '“'}</span>
+      <blockquote lang={q.lang} dir={q.lang === 'ar' ? 'rtl' : 'ltr'}><QuoteWords text={q.text} /></blockquote>
+      <p className="tr" lang={q.lang === 'ar' ? 'en' : 'ar'} dir={q.lang === 'ar' ? 'ltr' : 'rtl'}>{q.translation}</p>
+      <figcaption>
+        <bdi>{q.author}</bdi> · <bdi>{q.work}</bdi> · <a href={q.sourceUrl} target="_blank" rel="noopener noreferrer">{i.t('source')}</a>
+        <span className="muted"> · {i.t(q.translationBy === 'app' ? 'translation_app' : 'translation_published')}</span>
+        {dq.repeated && <span className="muted"> · {i.t('quote_repeated', { n: dq.librarySize })}</span>}
+      </figcaption>
+    </figure>
+  );
+}
+
 export function Dashboard() {
   const { data, i, today, opt, plan } = useApp();
   const todayOcc = useMemo(() => {
@@ -71,79 +111,125 @@ export function Dashboard() {
   const sg = suggestNext(data, todayOcc, today);
   const titleOf = (h?: string | null, t?: string | null) => (h ? data.habits.find((x) => x.id === h)?.title : data.tasks.find((x) => x.id === t)?.title) ?? '';
   const sgText = sg.kind === 'planFirst' || sg.kind === 'none' || sg.kind === 'reviewLoad' ? i.t(`sg_${sg.kind}`) : i.t(`sg_${sg.kind}`, { t: titleOf(sg.habitId, sg.taskId), n: i.num(sg.amount ?? 0, 2) });
-  const goals = aliveGoals(data).filter((g) => g.planYearId === plan!.id && g.level === 'year' && g.status === 'active').sort((a, b) => a.priority - b.priority || (a.deadline ?? '9999') .localeCompare(b.deadline ?? '9999'));
-  const upcoming = [
-    ...aliveGoals(data).filter((g) => g.deadline && g.deadline >= today && g.deadline <= addDays(today, 30) && g.status === 'active').map((g) => ({ id: g.id, title: g.title, date: g.deadline!, link: href('/year', { focus: g.id }) })),
-    ...data.tasks.filter((t) => !t.deletedAt && t.dueDate >= today && t.dueDate <= addDays(today, 14) && !data.logs.some((l) => l.taskId === t.id && !l.deletedAt && l.kind === 'progress')).map((t) => ({ id: t.id, title: t.title, date: t.dueDate, link: href(`/day/${t.dueDate}`, { focus: `t:${t.id}` }) })),
-  ].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
   const openCount = todayOcc.filter((o) => !o.excluded && o.contribution < 1 && !o.recorded).length;
 
-  return (
-    <div className="page">
-      <div className="row between" style={{ marginBottom: 14 }}>
-        <div>
-          <h1>{i.date(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h1>
-          <p className="muted small" style={{ margin: 0 }}>{data.settings.timeZone}</p>
-        </div>
-        <a className="btn primary" href={href(`/day/${today}`)}>{i.t('nav_day')}</a>
-      </div>
-      <ReminderBanner open={openCount} />
+  const a = useMemo(() => {
+    const win = { start: addDays(today, -28), end: today };
+    const occ = occurrencesFor(data, { range: win, today }, opt);
+    const recent = occ.filter((o) => o.date >= addDays(today, -14));
+    const c14 = commitment(recent);
+    const year = planYearRange(plan!.startDate);
+    const pp = planProgress(occurrencesFor(data, { range: year, today }, opt));
+    const days = Array.from({ length: 28 }, (_, k) => addDays(today, k - 28)).map((d) => {
+      const c = commitment(occ.filter((o) => o.date === d && o.kind !== 'quota'));
+      return { date: d, ratio: c.ratio, recorded: c.recordedCount > 0 || c.dueCount === 0, due: c.dueCount };
+    });
+    const tr = trend(data, today, data.settings.trend, opt);
+    const ents = entitlements(occurrencesFor(data, { range: { start: '2000-01-01', end: addDays(today, 1) }, today }, opt), data);
+    const goals = aliveGoals(data).filter((g) => g.planYearId === plan!.id && g.level === 'year' && g.status !== 'archived').map((g) => ({ g, n: goalProgress(g.id, data, today, opt) }));
+    const habits = data.habits.filter((h) => !h.deletedAt && !h.archived).map((h) => ({ h, c: commitment(occ.filter((o) => o.habitId === h.id)) }));
+    const recs = recoveries(occ);
+    return { c14, pp, days, tr, ents, goals, habits, recs, xp: totalXP(ents) };
+  }, [data, today, opt, plan]);
+  const lv = levelFor(a.xp);
+  const verdictTone = a.tr.verdict === 'improving' ? 'green' : a.tr.verdict === 'declining' ? 'warn' : a.tr.verdict === 'steady' ? 'info' : '';
 
-      <section className="panel" style={{ borderColor: 'var(--green)' }}>
-        <div className="row between"><h2>{i.t('suggested_step')}</h2><span className="chip">{i.t('suggestion_label')}</span></div>
-        <p style={{ margin: 0 }}>
-          {sg.occurrenceKey ? <a href={href(`/day/${today}`, { focus: sg.occurrenceKey })}><bdi>{sgText}</bdi></a> : sg.kind === 'planFirst' ? <a href={href('/year')}>{sgText}</a> : sgText}
-        </p>
+  return (
+    <div className="page home">
+      <ReminderBanner open={openCount} />
+      <p className="home-date">{i.date(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+
+      <section className="quotes" aria-label={i.t('quotes_title')}>
+        <HeroQuote lang="ar" />
+        <HeroQuote lang="en" />
       </section>
 
-      <div className="grid two" style={{ marginTop: 14 }}>
-        <section>
-          <h2>{i.t('due_today')}</h2>
-          {todayOcc.length ? todayOcc.slice(0, 6).map((o) => <OccurrenceRow key={o.key} o={o} date={today} />) : <Empty>{i.t('nothing_due')}</Empty>}
-          {todayOcc.length > 6 && <a className="btn small" href={href(`/day/${today}`)} style={{ marginTop: 8 }}>{i.t('nav_day')} (+{todayOcc.length - 6})</a>}
+      <Reveal>
+        <section className="rings" aria-label={i.t('nav_analytics')}>
+          <Ring value={a.c14.ratio} label={i.t('commitment')} sub={a.c14.ratio == null ? i.t('no_items') : i.t('last_n_days', { n: 14 })} />
+          <Ring value={a.pp.ratio} expected={a.pp.expected} label={i.t('plan_progress')} sub={a.pp.expected != null ? `${i.t('expected_by_now')} ${i.pct(a.pp.expected)}` : undefined} tone="info" />
+          <Ring value={a.c14.coverage} label={i.t('coverage')} sub={i.t('due_count') + ' ' + a.c14.dueCount} tone="gold" />
         </section>
-        <div className="stack" style={{ gap: 14 }}>
-          <section className="panel">
-            <h2>{i.t('priorities')}</h2>
-            {!goals.length && <p className="muted small"><a href={href('/year')}>{i.t('empty_goals')}</a></p>}
-            <div className="stack">
-              {goals.slice(0, 4).map((g) => {
-                const n = goalProgress(g.id, data, today, opt);
-                return (
-                  <a key={g.id} href={href('/year', { focus: g.id })} style={{ color: 'inherit', textDecoration: 'none' }} className="stack">
-                    <div className="row between">
-                      <bdi style={{ fontWeight: 600 }}>{g.title}</bdi>
-                      <span className={`chip ${n?.daysLeft != null && n.daysLeft < 14 ? 'warn' : ''}`}>
-                        {g.deadline ? (n!.daysLeft! >= 0 ? i.t('days_left', { n: n!.daysLeft! }) : i.t('overdue_days', { n: -n!.daysLeft! })) : i.t('no_deadline')}
-                      </span>
-                    </div>
-                    <Trail ratio={n?.plan.ratio ?? null} expected={n?.plan.expected} label={g.title} />
-                  </a>
-                );
-              })}
+      </Reveal>
+
+      <Reveal delay={60}>
+        <section className="panel trendcard">
+          <div className="row between">
+            <h2 style={{ margin: 0 }}>{i.t('trend')}</h2>
+            <span className={`chip ${verdictTone}`}>{i.t(`tr_${a.tr.verdict}`)}{a.tr.deltaPP != null && a.tr.verdict !== 'insufficient' ? ` ${a.tr.deltaPP > 0 ? '+' : ''}${i.num(a.tr.deltaPP, 1)}` : ''}</span>
+          </div>
+          <Sparkline points={a.days.map((d) => d.ratio)} label={i.t('trend')} />
+          <HeatStrip days={a.days.map((d) => ({ ...d, label: `${i.date(d.date, { day: 'numeric', month: 'short' })}: ${d.ratio == null ? i.t('no_items') : i.pct(d.ratio)}` }))} />
+          <p className="small muted" style={{ margin: 0 }}>
+            {i.t('trend_detail', { n: data.settings.trend.windowDays, a: i.pct(a.tr.recent.ratio), ad: a.tr.recent.dueCount, b: i.pct(a.tr.previous.ratio), bd: a.tr.previous.dueCount, d: a.tr.deltaPP == null ? '—' : `${a.tr.deltaPP > 0 ? '+' : ''}${i.num(a.tr.deltaPP, 1)}` })}
+          </p>
+          {a.tr.verdict === 'declining' && <div className="banner warn">{i.t('tr_msg_declining')}</div>}
+          {a.tr.verdict === 'improving' && <div className="banner gold">{i.t('tr_msg_improving')}</div>}
+        </section>
+      </Reveal>
+
+      <Reveal delay={90}>
+        <section className="panel">
+          <div className="row between"><h2 style={{ margin: 0 }}>{i.t('goals')}</h2><a className="small" href={href('/year')}>{i.t('nav_year')}</a></div>
+          {!a.goals.length && <p className="muted small"><a href={href('/year')}>{i.t('empty_goals')}</a></p>}
+          <div className="goalbars">
+            {a.goals.map(({ g, n }) => (
+              <a key={g.id} className="goalbar" href={href('/year', { focus: g.id })}>
+                <span className="gb-head">
+                  <bdi className="gb-title">{g.title}</bdi>
+                  <span className="gb-meta num">
+                    {n?.outcome.achieved ? <span className="chip gold">★</span> : null}
+                    {i.pct(n?.plan.ratio ?? null)}
+                    {g.deadline && n?.daysLeft != null && <span className="muted"> · {n.daysLeft >= 0 ? i.t('days_left', { n: n.daysLeft }) : i.t('overdue_days', { n: -n.daysLeft })}</span>}
+                  </span>
+                </span>
+                <Trail ratio={n?.plan.ratio ?? null} expected={n?.plan.expected} label={g.title} />
+              </a>
+            ))}
+          </div>
+        </section>
+      </Reveal>
+
+      <Reveal delay={120}>
+        <section className="panel">
+          <div className="row between"><h2 style={{ margin: 0 }}>{i.t('habits')}</h2><a className="small" href={href('/habits')}>{i.t('nav_habits')}</a></div>
+          <div className="habitbars">
+            {a.habits.map(({ h, c }) => (
+              <a key={h.id} className="habitbar" href={href('/analytics', { type: 'month', habit: h.id })}>
+                <bdi>{h.title}</bdi>
+                <span className="hb-track"><span className="hb-fill" style={{ ['--v' as string]: c.ratio ?? 0 }} /></span>
+                <span className="num small">{c.ratio == null ? '—' : i.pct(c.ratio)}</span>
+              </a>
+            ))}
+          </div>
+          {a.recs.slice(-2).map((r) => <p key={r.habitId + r.date} className="small" style={{ margin: '10px 0 0', color: 'var(--gold)' }}>★ {i.t('recovery_item', { t: data.habits.find((h) => h.id === r.habitId)?.title ?? '', n: r.gap })}</p>)}
+        </section>
+      </Reveal>
+
+      {data.settings.gamification && (
+        <Reveal delay={150}>
+          <section className="panel levelcard">
+            <Ring value={lv.into / lv.needed} label={i.t('xp_level', { n: lv.level })} sub={i.t('xp', { n: a.xp })} tone="gold" size={110} />
+            <div className="stack" style={{ minWidth: 0 }}>
+              <h2 style={{ margin: 0 }}>{i.t('badges')}</h2>
+              <div className="row">
+                {badges(a.ents).map((b) => (
+                  <span key={b.id} className={`chip ${b.earned ? 'gold' : ''}`}>{b.earned ? '★' : '☆'} {i.t(`b_${b.id.replace(/-/g, '_')}` as 'b_comeback')}</span>
+                ))}
+              </div>
+              <p className="small muted" style={{ margin: 0 }}>{i.t('xp_note')}</p>
             </div>
           </section>
-          <section className="panel">
-            <h2>{i.t('upcoming')}</h2>
-            {!upcoming.length ? <p className="muted small" style={{ margin: 0 }}>{i.t('nothing_due')}</p> : (
-              <ul style={{ margin: 0, paddingInlineStart: 18 }}>
-                {upcoming.map((u) => <li key={u.id}><a href={u.link}><bdi>{u.title}</bdi></a> <span className="small muted num">{i.date(u.date)}</span></li>)}
-              </ul>
-            )}
-          </section>
-        </div>
-      </div>
+        </Reveal>
+      )}
 
-      <h2 style={{ marginTop: 22 }}>{i.t('quotes_title')}</h2>
-      <div className="grid two">
-        <QuoteCard lang="ar" />
-        <QuoteCard lang="en" />
-      </div>
-      <section className="panel" style={{ marginTop: 14 }}>
-        <div className="row between"><h3>{i.t('daily_action')}</h3><span className="chip">{i.t('suggestion_label')}</span></div>
-        <p style={{ margin: 0 }}><bdi>{sgText}</bdi></p>
-      </section>
-      <div style={{ marginTop: 14 }}><TrendCard /></div>
+      <Reveal delay={180}>
+        <section className="panel suggest">
+          <div className="row between"><h2 style={{ margin: 0 }}>{i.t('suggested_step')}</h2><span className="chip">{i.t('suggestion_label')}</span></div>
+          <p style={{ margin: '8px 0 14px' }}><bdi>{sgText}</bdi></p>
+          <a className="btn primary" href={href(`/day/${today}`, sg.occurrenceKey ? { focus: sg.occurrenceKey } : undefined)}>{i.t('open_day')}</a>
+        </section>
+      </Reveal>
     </div>
   );
 }

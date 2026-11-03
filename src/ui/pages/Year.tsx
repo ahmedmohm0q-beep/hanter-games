@@ -238,7 +238,7 @@ function Station({ goal, card }: { goal: Goal; card: React.ReactNode }) {
   return (
     <div className="station" ref={ref}>
       <svg className="branch-lines" width={size.w} height={size.h} aria-hidden>
-        {links.map((l, k) => <g key={k}><path d={l.d} /><circle cx={l.x} cy={l.y} r={3.5} /></g>)}
+        {links.map((l, k) => <g key={k}><path d={l.d} pathLength={1} /><circle cx={l.x} cy={l.y} r={3.5} /></g>)}
       </svg>
       {/* sides of the road: motivation on one side, fears and obstacles on the other */}
       <div className="clouds side-a"><PointBoxView goal={goal} box="benefits" /></div>
