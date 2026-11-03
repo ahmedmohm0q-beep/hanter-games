@@ -11,7 +11,6 @@ import { go, href } from '../router';
 import { Empty, StatusChip, Trail } from '../components/common';
 import { GoalForm, HabitForm, ResultForm, TaskForm } from '../components/Forms';
 
-const BOXES: PointBox[] = ['fears', 'benefits', 'obstacles'];
 
 function PointItem({ p, first, last, onMove }: { p: GoalPoint; first: boolean; last: boolean; onMove: (dir: -1 | 1) => void }) {
   const { save, remove, i, sync } = useApp();
@@ -83,7 +82,7 @@ function PointBoxView({ goal, box }: { goal: Goal; box: PointBox }) {
     saveMany([{ table: 'goalPoints', row: { ...a, sortOrder: b.sortOrder } }, { table: 'goalPoints', row: { ...b, sortOrder: a.sortOrder } }]);
   };
   return (
-    <section className={`box ${box}`} onClick={(e) => e.stopPropagation()} aria-label={i.t(box)}>
+    <section className={`box thought node ${box}`} onClick={(e) => e.stopPropagation()} aria-label={i.t(box)}>
       <h3><span>{i.t(box)}</span><button className="btn small ghost" onClick={add} aria-label={`${i.t('add_point')}: ${i.t(box)}`}>＋</button></h3>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {points.map((p, k) => <PointItem key={p.id} p={p} first={k === 0} last={k === points.length - 1} onMove={(d) => move(k, d)} />)}
@@ -160,7 +159,7 @@ function HabitCloud({ h }: { h: Habit }) {
     .find((o) => (o.kind === 'day' ? o.date === today : o.range.start <= today && today < o.range.end));
   const link = now ? href(`/day/${today}`, { focus: now.key }) : href('/habits', { focus: h.id });
   return (
-    <a className={`cloud${now && now.contribution >= 1 ? ' done' : ''}`} href={link} onClick={(e) => e.stopPropagation()}>
+    <a className={`cloud node${now && now.contribution >= 1 ? ' done' : ''}`} href={link} onClick={(e) => e.stopPropagation()}>
       <span className="cloud-title"><bdi>{h.title}</bdi></span>
       {h.cue && <span className="cloud-cue"><bdi>{h.cue}</bdi></span>}
       <span className="cloud-meta">
@@ -189,11 +188,12 @@ function useBranches(ref: React.RefObject<HTMLDivElement | null>, key: string) {
       const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
       const out: Link[] = [];
       const sides: Record<'l' | 'r', { k: ReturnType<typeof r> }[]> = { l: [], r: [] };
-      box.querySelectorAll(':scope > .clouds > .cloud').forEach((el) => {
+      box.querySelectorAll(':scope > .clouds > .node, :scope > .habits > .node').forEach((el) => {
         const k = r(el);
         const cx = k.l + k.w / 2;
-        if (k.r <= c.l + 4) sides.l.push({ k });
-        else if (k.l >= c.r - 4) sides.r.push({ k });
+        const below = k.t >= c.b - 4;
+        if (!below && k.r <= c.l + 4) sides.l.push({ k });
+        else if (!below && k.l >= c.r - 4) sides.r.push({ k });
         else {
           // phone layout: cloud sits under the card → branch drops from the card's bottom edge
           const sx = clamp(cx, c.l + 28, c.r - 28);
@@ -233,29 +233,25 @@ function Station({ goal, card }: { goal: Goal; card: React.ReactNode }) {
   const [form, setForm] = useState(false);
   const habits = data.habits.filter((h) => !h.deletedAt && !h.archived && h.goalIds.includes(goal.id)).sort((a, b) => a.sortOrder - b.sortOrder);
   const ref = useRef<HTMLDivElement>(null);
-  const { links, size } = useBranches(ref, habits.map((h) => h.id).join(','));
-  // alternate habits between the two sides of the road
-  const sideA = habits.filter((_, k) => k % 2 === 0);
-  const sideB = habits.filter((_, k) => k % 2 === 1);
-  const addCloud = <button key="add" className="cloud add" onClick={(e) => { e.stopPropagation(); setForm(true); }}>＋ {i.t('habit')}</button>;
+  const points = data.goalPoints.filter((x) => x.goalId === goal.id && !x.deletedAt).map((x) => x.id + x.version).join(',');
+  const { links, size } = useBranches(ref, habits.map((h) => h.id).join(',') + '|' + points);
   return (
     <div className="station" ref={ref}>
       <svg className="branch-lines" width={size.w} height={size.h} aria-hidden>
         {links.map((l, k) => <g key={k}><path d={l.d} /><circle cx={l.x} cy={l.y} r={3.5} /></g>)}
       </svg>
-      <div className="clouds side-a">{sideA.map((h) => <HabitCloud key={h.id} h={h} />)}{sideB.length >= sideA.length && addCloud}</div>
+      {/* sides of the road: motivation on one side, fears and obstacles on the other */}
+      <div className="clouds side-a"><PointBoxView goal={goal} box="benefits" /></div>
       {card}
-      <div className="clouds side-b">{sideB.map((h) => <HabitCloud key={h.id} h={h} />)}{sideB.length < sideA.length && addCloud}</div>
+      <div className="clouds side-b"><PointBoxView goal={goal} box="fears" /><PointBoxView goal={goal} box="obstacles" /></div>
+      {/* habits hang below the goal; a goal can have as many as you like */}
+      <div className="habits">
+        {habits.map((h) => <HabitCloud key={h.id} h={h} />)}
+        <button className="cloud add node" onClick={(e) => { e.stopPropagation(); setForm(true); }}>＋ {i.t('habit')}</button>
+      </div>
       {form && <HabitForm goalId={goal.id} onClose={() => setForm(false)} />}
     </div>
   );
-}
-
-function reflectionsOpen(id: string): boolean {
-  try { return localStorage.getItem(`hg:refl:${id}`) === '1'; } catch { return false; }
-}
-function setReflectionsOpen(id: string, v: boolean) {
-  try { v ? localStorage.setItem(`hg:refl:${id}`, '1') : localStorage.removeItem(`hg:refl:${id}`); } catch { /* ignore */ }
 }
 
 export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; open: Set<string>; toggle: (id: string) => void; onMove: (d: -1 | 1) => void; first: boolean; last: boolean }) {
@@ -264,8 +260,6 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
   const [result, setResult] = useState(false);
   const n = goalProgress(goal.id, data, today, opt);
   const isOpen = open.has(goal.id);
-  const [refl, setRefl] = useState(() => reflectionsOpen(goal.id));
-  const points = data.goalPoints.filter((x) => x.goalId === goal.id && !x.deletedAt).length;
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   const card = (
       <div className={`goalcard${isOpen ? ' open' : ''}`} role="button" tabIndex={0} aria-expanded={isOpen}
@@ -295,19 +289,12 @@ export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; 
             <button className="btn small ghost" onClick={() => save('goals', { ...goal, status: 'archived' })}>{i.t('archive')}</button>
           </span>
         </div>
-        <button className="btn small reflections" aria-expanded={refl} onClick={(e) => { stop(e); setRefl(!refl); setReflectionsOpen(goal.id, !refl); }}>
-          {refl ? '▾' : '▸'} {i.t('reflections')} <span className="num">({points})</span>
-        </button>
       </div>
   );
   return (
     <div className="camp" id={`goal-${goal.id}`}>
       <Station goal={goal} card={card} />
-      {refl && (
-        <div className="branches">
-          {BOXES.map((b) => <PointBoxView key={b} goal={goal} box={b} />)}
-        </div>
-      )}
+
       {isOpen && (
         <div className="drill panel">
           <SubTree goal={goal} open={open} toggle={toggle} depth={1} />

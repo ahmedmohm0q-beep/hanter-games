@@ -198,33 +198,52 @@ textarea.input { min-height: 72px; resize: vertical; }
 .branch-lines path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; opacity: 0.75; }
 .branch-lines circle { fill: var(--muted); opacity: 0.75; }
 .clouds { display: contents; }
-/* phone: card on top, habit clouds in two columns underneath */
+/* phone: card first, then its habits, then motivation / fears / obstacles stacked */
 .station { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 14px; }
 .station > .goalcard { order: -1; flex: 0 0 100%; max-width: 560px; }
-.station .cloud { flex: 0 1 calc(50% - 7px); }
+.station > .habits { order: 0; flex: 0 0 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.station .thought { order: 1; flex: 0 0 100%; max-width: 560px; }
+
+/* side clouds: the thoughts around a goal (editable lists) */
+.thought {
+  position: relative; z-index: 1; padding: 16px 18px 14px; background: var(--raised);
+  border: 2px solid var(--line); border-radius: 44px 52px 40px 56px / 40px 46px 52px 42px; cursor: default;
+}
+.thought h3 { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.95rem; margin: 0 0 4px; }
+.thought.fears { border-color: color-mix(in srgb, var(--alert) 55%, var(--line)); }
+.thought.benefits { border-color: color-mix(in srgb, var(--gold) 60%, var(--line)); }
+.thought.obstacles { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.thought.fears h3 span { color: var(--alert); }
+.thought.benefits h3 span { color: var(--gold); }
+.thought.obstacles h3 span { color: var(--warn); }
+
+/* habit clouds hanging below the goal */
 .cloud {
-  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  width: 100%; max-width: 200px; min-height: 92px; padding: 14px 16px; text-align: center; text-decoration: none; color: var(--text);
-  background: var(--raised); border: 2px solid var(--line); cursor: pointer;
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  flex: 0 1 170px; min-width: 0; min-height: 78px; padding: 12px 14px; text-align: center; text-decoration: none; color: var(--text);
+  background: var(--surface); border: 2px solid var(--line); cursor: pointer;
   border-radius: 46% 54% 52% 48% / 58% 50% 50% 42%;
 }
 .cloud:nth-child(even) { border-radius: 56% 44% 42% 58% / 46% 60% 40% 54%; }
 .cloud:hover { border-color: var(--green); }
 .cloud.done { border-color: var(--green); background: var(--green-soft); }
-.cloud.add { border-style: dashed; color: var(--muted); font-weight: 600; min-height: 64px; }
-.cloud-title { font-weight: 600; line-height: 1.35; }
-.cloud-cue { font-size: 0.78rem; color: var(--muted); }
-.cloud-meta { display: flex; gap: 6px; align-items: center; font-size: 0.8rem; }
-.reflections { margin-top: 10px; }
-/* wide: clouds on both sides of the road, branching from the card's sides */
-@container (min-width: 700px) {
-  .station { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 460px) minmax(0, 1fr); column-gap: clamp(28px, 5cqi, 56px); align-items: center; }
+.cloud.add { border-style: dashed; color: var(--muted); font-weight: 600; min-height: 60px; flex-basis: 120px; }
+.cloud-title { font-weight: 600; line-height: 1.35; font-size: 0.92rem; }
+.cloud-cue { font-size: 0.76rem; color: var(--muted); }
+.cloud-meta { display: flex; gap: 6px; align-items: center; font-size: 0.78rem; }
+@media (max-width: 560px) { .station > .habits .cloud { flex: 0 1 calc(50% - 6px); } }
+
+/* wide: thoughts on both sides of the road, branching from the card's sides; habits underneath */
+@container (min-width: 860px) {
+  .station { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px) minmax(0, 1fr); column-gap: clamp(32px, 4.5cqi, 56px); row-gap: 30px; align-items: center; }
   .station > .goalcard { grid-column: 2; grid-row: 1; max-width: none; }
-  .clouds { display: flex; flex-direction: column; gap: 26px; width: 100%; }
-  .clouds.side-a { grid-column: 1; grid-row: 1; align-items: flex-end; }
-  .clouds.side-b { grid-column: 3; grid-row: 1; align-items: flex-start; }
-  .station .cloud { flex: none; }
-  .clouds .cloud:nth-child(odd) { margin-inline-end: clamp(0px, 3cqi, 28px); }
+  .clouds { display: flex; flex-direction: column; gap: 22px; width: 100%; }
+  .clouds.side-a { grid-column: 1; grid-row: 1; align-items: stretch; }
+  .clouds.side-b { grid-column: 3; grid-row: 1; align-items: stretch; }
+  .station .thought { max-width: 320px; width: 100%; }
+  .clouds.side-a .thought { margin-inline-start: auto; }
+  .clouds.side-b .thought:nth-child(2) { margin-inline-start: clamp(0px, 2.5cqi, 24px); }
+  .station > .habits { grid-column: 1 / -1; grid-row: 2; }
 }
 .goalcard {
   position: relative; z-index: 1; width: min(560px, 100%); background: var(--surface); border: 1px solid var(--line);
@@ -312,4 +331,10 @@ table.data th { color: var(--muted); font-weight: 500; }
   .shell { display: block; }
   body { background: #fff; color: #000; }
   .panel { box-shadow: none; border-color: #bbb; break-inside: avoid; }
+}
+
+/* thought clouds reuse the .box editor; give them the cloud shape over the plain box styling */
+.station .box.thought {
+  padding: 16px 18px 14px; background: var(--raised); border-width: 2px; border-top-width: 2px;
+  border-radius: 44px 52px 40px 56px / 40px 46px 52px 42px;
 }
