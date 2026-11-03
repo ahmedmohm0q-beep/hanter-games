@@ -1,6 +1,12 @@
 # STATUS — HANTER GAMES
 
-آخر تحديث: 2026-11-03 · المرحلة: **1 (دورة كاملة تعمل محليًا) مكتملة** · المرحلة التالية: 2 (التحقق السحابي)
+آخر تحديث: 2026-11-03 · المرحلة: **2 (نشر ومزامنة) قيد التحقق على أجهزة المستخدم**
+
+## النشر الحالي
+- الموقع: https://ahmedmohm0q-beep.github.io/hanter-games/ (GitHub Pages)
+- ملفات التثبيت: صفحة Releases في https://github.com/ahmedmohm0q-beep/hanter-games (APK لأندرويد، EXE لويندوز)
+- قاعدة البيانات: Supabase project `hanter-games` (eu-central-1)، الـmigration الأساسية مطبّقة، وإصلاح `20261103100000_fix_upsert_version.sql` مطبّق يدويًا من SQL Editor.
+- خلل تم إصلاحه: تعارض وهمي «تعارض بين جهازين» عند تعديل نفس العنصر مرتين (trigger كان يصفّر version في مسار upsert). اختبار SQL T9 يغطيه.
 
 ## بيئة البناء (مهم لفهم ما تم التحقق منه)
 - سجل npm كان محجوبًا (403)، فلم يُشغَّل `npm install` ولا `vite build` ولا `tsc` على مكونات React.
