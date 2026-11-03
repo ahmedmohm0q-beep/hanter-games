@@ -26,7 +26,8 @@ interface StoreValue {
   conflicts: Conflict[];
   online: boolean;
   save: <T extends AnyRow>(table: TableName, row: T) => boolean;
-  saveMany: (items: { table: TableName; row: AnyRow }[]) => boolean;
+  // generic so callers can pass spread literals like { ...goal, sortOrder } without excess-property errors
+  saveMany: <I extends { table: TableName; row: AnyRow }>(items: I[]) => boolean;
   remove: (table: EntityTable, id: string) => boolean;
   retry: () => void;
   resolve: (c: Conflict, keep: 'mine' | 'theirs') => void;
@@ -203,7 +204,7 @@ export function StoreProvider({ repo, initial, syncedAt: initialSynced, fromCach
   }, [online, flush, repo.mode]);
 
   const saveMany = useCallback(
-    (items: { table: TableName; row: AnyRow }[]) => {
+    <I extends { table: TableName; row: AnyRow }>(items: I[]) => {
       if (!repo.canWrite()) {
         setSync('readOnly');
         return false;
