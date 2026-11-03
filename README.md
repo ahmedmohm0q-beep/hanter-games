@@ -1,5 +1,7 @@
 # HANTER GAMES
 
+**النسخة المنشورة:** https://ahmedmohm0q-beep.github.io/hanter-games/ · **ملفات التثبيت:** صفحة Releases في هذا الـ repo.
+
 تطبيق PWA لمتابعة العادات والأهداف بخطة سنوية واحدة تُعرض باليوم والأسبوع والشهر ونصف السنة والسنة. عربي (RTL) افتراضيًا مع إنجليزية (LTR).
 
 **الحزمة:** React 19 + TypeScript + Vite · Supabase (Auth + Postgres + RLS + Realtime) · Service Worker يدوي · بدون مكتبات واجهة إضافية.
