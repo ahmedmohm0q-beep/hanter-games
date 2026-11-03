@@ -36,8 +36,21 @@ check('goal card shows its own deadline', (await page.locator('.goalcard').first
 await page.getByRole('button', { name: /أضف نقطة: المخاوف/ }).click();
 const ta = page.locator('.box.fears textarea').first();
 await ta.click();
-await ta.fill('ضيق الوقت قبل الامتحان');
+await ta.click();
+// type key by key like a phone keyboard, then stay in the box while the auto-save runs
+await page.keyboard.type('ضيق الوقت قبل الامتحان.', { delay: 30 });
+await page.waitForTimeout(1500);
+const live = await ta.inputValue();
+check('auto-save keeps the last typed character', live === 'ضيق الوقت قبل الامتحان.', JSON.stringify(live));
+await page.keyboard.press('Enter');
+await page.keyboard.type('سطر', { delay: 30 });
+await page.waitForTimeout(1500);
+check('auto-save keeps a new line', (await ta.inputValue()) === 'ضيق الوقت قبل الامتحان.\nسطر', JSON.stringify(await ta.inputValue()));
 await ta.blur();
+await page.waitForTimeout(300);
+await page.reload();
+await page.locator('.box.fears textarea').first().waitFor();
+check('typed point survives reload exactly', (await page.locator('.box.fears textarea').first().inputValue()) === 'ضيق الوقت قبل الامتحان.\nسطر');
 check('typing in a box does not open the goal list', (await page.locator('.goalcard').first().getAttribute('aria-expanded')) === 'false');
 await page.waitForTimeout(300);
 

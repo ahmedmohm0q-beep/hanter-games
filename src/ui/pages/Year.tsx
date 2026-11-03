@@ -12,28 +12,47 @@ const BOXES: PointBox[] = ['fears', 'benefits', 'obstacles'];
 
 function PointItem({ p, first, last, onMove }: { p: GoalPoint; first: boolean; last: boolean; onMove: (dir: -1 | 1) => void }) {
   const { save, remove, i, sync } = useApp();
-  const [text, setText] = useState(p.text);
-  const [ifThen, setIfThen] = useState(p.ifThen);
-  const [nextStep, setNextStep] = useState(p.nextStep);
+  const [text, setTextState] = useState(p.text);
+  const [ifThen, setIfThenState] = useState(p.ifThen);
+  const [nextStep, setNextStepState] = useState(p.nextStep);
   const [state, setState] = useState<'idle' | 'dirty' | 'saved'>('idle');
   const timer = useRef(0);
+  // Latest typed values live in a ref, so a delayed save never sends a stale copy
+  // (a stale copy used to drop the last typed character, space or line break).
+  const latest = useRef({ text: p.text, ifThen: p.ifThen, nextStep: p.nextStep });
+  const focused = useRef(false);
+  const dirty = useRef(false);
+  const rowRef = useRef(p);
+  rowRef.current = p;
   useEffect(() => {
-    // accept remote updates when not editing
-    if (state !== 'dirty') { setText(p.text); setIfThen(p.ifThen); setNextStep(p.nextStep); }
-  }, [p.version, p.text, p.ifThen, p.nextStep]); // eslint-disable-line
-  const commit = (patch: Partial<GoalPoint>) => {
+    // accept updates from other devices only while this point is not being edited
+    if (dirty.current || focused.current) return;
+    latest.current = { text: p.text, ifThen: p.ifThen, nextStep: p.nextStep };
+    setTextState(p.text); setIfThenState(p.ifThen); setNextStepState(p.nextStep);
+  }, [p.version, p.text, p.ifThen, p.nextStep]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const commit = () => {
     clearTimeout(timer.current);
-    if (save('goalPoints', { ...p, text, ifThen, nextStep, ...patch })) setState('saved');
+    if (!dirty.current) return;
+    if (save('goalPoints', { ...rowRef.current, ...latest.current })) {
+      dirty.current = false;
+      setState('saved');
+    }
   };
-  const schedule = () => {
+  const change = (k: 'text' | 'ifThen' | 'nextStep', v: string) => {
+    latest.current = { ...latest.current, [k]: v };
+    (k === 'text' ? setTextState : k === 'ifThen' ? setIfThenState : setNextStepState)(v);
+    dirty.current = true;
     setState('dirty');
     clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => commit({}), 800);
+    timer.current = window.setTimeout(commit, 800);
   };
+  const onFocus = () => { focused.current = true; };
+  const onBlur = () => { focused.current = false; commit(); };
   return (
     <li className="point">
       <textarea value={text} dir="auto" rows={1} aria-label={i.t('point_ph')} placeholder={i.t('point_ph')}
-        onChange={(e) => { setText(e.target.value); schedule(); }} onBlur={() => state === 'dirty' && commit({})} />
+        onChange={(e) => change('text', e.target.value)} onFocus={onFocus} onBlur={onBlur} />
       <div className="ctl">
         <button onClick={() => onMove(-1)} disabled={first} aria-label={i.t('move_up')}>▲</button>
         <button onClick={() => onMove(1)} disabled={last} aria-label={i.t('move_down')}>▼</button>
@@ -41,9 +60,9 @@ function PointItem({ p, first, last, onMove }: { p: GoalPoint; first: boolean; l
       </div>
       <div className="extra">
         {p.box === 'obstacles' && (
-          <input value={ifThen} dir="auto" placeholder={i.t('if_then_ph')} aria-label={i.t('if_then')} onChange={(e) => { setIfThen(e.target.value); schedule(); }} onBlur={() => state === 'dirty' && commit({})} />
+          <input value={ifThen} dir="auto" placeholder={i.t('if_then_ph')} aria-label={i.t('if_then')} onChange={(e) => change('ifThen', e.target.value)} onFocus={onFocus} onBlur={onBlur} />
         )}
-        <input value={nextStep} dir="auto" placeholder={i.t('next_step')} aria-label={i.t('next_step')} onChange={(e) => { setNextStep(e.target.value); schedule(); }} onBlur={() => state === 'dirty' && commit({})} />
+        <input value={nextStep} dir="auto" placeholder={i.t('next_step')} aria-label={i.t('next_step')} onChange={(e) => change('nextStep', e.target.value)} onFocus={onFocus} onBlur={onBlur} />
         <span className="savestate" aria-live="polite">{state === 'dirty' ? '…' : state === 'saved' ? (sync === 'saved' ? i.t('sync_saved') : i.t(`sync_${sync}` as 'sync_saved')) : ''}</span>
       </div>
     </li>
