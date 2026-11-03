@@ -33,6 +33,7 @@ await page.waitForSelector('text=اجتياز CMA Part 1');
 check('goal card shows its own deadline', (await page.locator('.goalcard').first().innerText()).includes('2027'));
 
 // three boxes: typing does not open the goal drill-down
+await page.locator('.reflections').first().click();
 await page.getByRole('button', { name: /أضف نقطة: المخاوف/ }).click();
 const ta = page.locator('.box.fears textarea').first();
 await ta.click();
@@ -67,6 +68,9 @@ await page.getByLabel('طريقة القياس').selectOption('minutes');
 await page.getByLabel('المستهدف لكل مرة').fill('40');
 await page.getByLabel('يسري من').fill('2026-11-03');
 await page.getByRole('button', { name: 'حفظ' }).click();
+await page.waitForTimeout(400);
+check('habit appears as a cloud branching from its goal', (await page.locator('.station .cloud', { hasText: 'مذاكرة' }).count()) === 1);
+check('a branch line is drawn to every cloud', (await page.locator('.station .branch-lines path').count()) === (await page.locator('.station .cloud').count()));
 await page.getByRole('button', { name: '＋ مهمة' }).first().click();
 await page.getByLabel('العنوان').fill('حل 30 سؤال');
 await page.getByLabel('تاريخ الاستحقاق').fill('2026-11-20');

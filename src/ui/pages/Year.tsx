@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { goalProgress } from '../../domain/progress';
 import { planYearRange, lastDay } from '../../domain/periods';
-import type { Goal, GoalPoint, PointBox } from '../../domain/types';
+import type { Goal, GoalPoint, Habit, PointBox } from '../../domain/types';
+import { addDays } from '../../domain/dates';
+import { commitment } from '../../domain/progress';
+import { occurrencesFor } from '../../domain/schedule';
 import { newRow } from '../../data/model';
 import { aliveGoals, goalPath, useApp } from '../ctx';
 import { go, href } from '../router';
-import { Empty, Trail } from '../components/common';
+import { Empty, StatusChip, Trail } from '../components/common';
 import { GoalForm, HabitForm, ResultForm, TaskForm } from '../components/Forms';
 
 const BOXES: PointBox[] = ['fears', 'benefits', 'obstacles'];
@@ -147,15 +150,124 @@ function SubTree({ goal, open, toggle, depth }: { goal: Goal; open: Set<string>;
   );
 }
 
-function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; open: Set<string>; toggle: (id: string) => void; onMove: (d: -1 | 1) => void; first: boolean; last: boolean }) {
+// ---------- habit clouds branching from a goal (the "station" on the road) ----------
+
+function HabitCloud({ h }: { h: Habit }) {
+  const { data, i, today, opt } = useApp();
+  const recent = occurrencesFor(data, { range: { start: addDays(today, -28), end: today }, today, habitIds: [h.id], includeTasks: false }, opt);
+  const c = commitment(recent);
+  const now = occurrencesFor(data, { range: { start: addDays(today, -31), end: addDays(today, 32) }, today, habitIds: [h.id], includeTasks: false }, opt)
+    .find((o) => (o.kind === 'day' ? o.date === today : o.range.start <= today && today < o.range.end));
+  const link = now ? href(`/day/${today}`, { focus: now.key }) : href('/habits', { focus: h.id });
+  return (
+    <a className={`cloud${now && now.contribution >= 1 ? ' done' : ''}`} href={link} onClick={(e) => e.stopPropagation()}>
+      <span className="cloud-title"><bdi>{h.title}</bdi></span>
+      {h.cue && <span className="cloud-cue"><bdi>{h.cue}</bdi></span>}
+      <span className="cloud-meta">
+        {now ? <StatusChip s={now.status} /> : null}
+        <span className="num" title={i.t('commit_today', { n: 28 })}>{c.ratio == null ? '—' : i.pct(c.ratio)}</span>
+      </span>
+    </a>
+  );
+}
+
+interface Link { d: string; x: number; y: number }
+
+/** Draws curved branches from the goal card to each habit cloud, measured from the real layout. */
+function useBranches(ref: React.RefObject<HTMLDivElement | null>, key: string) {
+  const [links, setLinks] = useState<Link[]>([]);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+    const measure = () => {
+      const card = box.querySelector<HTMLElement>(':scope > .goalcard');
+      if (!card) return;
+      const b = box.getBoundingClientRect();
+      const r = (el: Element) => { const q = el.getBoundingClientRect(); return { l: q.left - b.left, t: q.top - b.top, r: q.right - b.left, b: q.bottom - b.top, w: q.width, h: q.height }; };
+      const c = r(card);
+      const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+      const out: Link[] = [];
+      const sides: Record<'l' | 'r', { k: ReturnType<typeof r> }[]> = { l: [], r: [] };
+      box.querySelectorAll(':scope > .clouds > .cloud').forEach((el) => {
+        const k = r(el);
+        const cx = k.l + k.w / 2;
+        if (k.r <= c.l + 4) sides.l.push({ k });
+        else if (k.l >= c.r - 4) sides.r.push({ k });
+        else {
+          // phone layout: cloud sits under the card → branch drops from the card's bottom edge
+          const sx = clamp(cx, c.l + 28, c.r - 28);
+          const sy = c.b;
+          const ey = k.t + 6;
+          const my = (sy + ey) / 2;
+          out.push({ d: `M ${sx} ${sy} C ${sx} ${my + 6}, ${cx} ${my - 6}, ${cx} ${ey}`, x: sx, y: sy });
+        }
+      });
+      // wide layout: branches leave the card's sides at spread-out points and bend out to each cloud
+      (['l', 'r'] as const).forEach((side) => {
+        const list = sides[side].sort((a, b) => a.k.t - b.k.t);
+        list.forEach(({ k }, idx) => {
+          const n = list.length;
+          const sx = side === 'l' ? c.l : c.r;
+          const sy = n === 1 ? c.t + c.h * 0.4 : c.t + c.h * (0.22 + (0.56 * idx) / (n - 1));
+          const ex = side === 'l' ? k.r - 6 : k.l + 6;
+          const ey = k.t + k.h / 2;
+          const dx = ex - sx;
+          out.push({ d: `M ${sx} ${sy} C ${sx + dx * 0.55} ${sy}, ${ex - dx * 0.35} ${ey}, ${ex} ${ey}`, x: sx, y: sy });
+        });
+      });
+      setLinks(out);
+      setSize({ w: b.width, h: b.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    box.querySelectorAll(':scope > *').forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
+  }, [ref, key]);
+  return { links, size };
+}
+
+function Station({ goal, card }: { goal: Goal; card: React.ReactNode }) {
+  const { data, i } = useApp();
+  const [form, setForm] = useState(false);
+  const habits = data.habits.filter((h) => !h.deletedAt && !h.archived && h.goalIds.includes(goal.id)).sort((a, b) => a.sortOrder - b.sortOrder);
+  const ref = useRef<HTMLDivElement>(null);
+  const { links, size } = useBranches(ref, habits.map((h) => h.id).join(','));
+  // alternate habits between the two sides of the road
+  const sideA = habits.filter((_, k) => k % 2 === 0);
+  const sideB = habits.filter((_, k) => k % 2 === 1);
+  const addCloud = <button key="add" className="cloud add" onClick={(e) => { e.stopPropagation(); setForm(true); }}>＋ {i.t('habit')}</button>;
+  return (
+    <div className="station" ref={ref}>
+      <svg className="branch-lines" width={size.w} height={size.h} aria-hidden>
+        {links.map((l, k) => <g key={k}><path d={l.d} /><circle cx={l.x} cy={l.y} r={3.5} /></g>)}
+      </svg>
+      <div className="clouds side-a">{sideA.map((h) => <HabitCloud key={h.id} h={h} />)}{sideB.length >= sideA.length && addCloud}</div>
+      {card}
+      <div className="clouds side-b">{sideB.map((h) => <HabitCloud key={h.id} h={h} />)}{sideB.length < sideA.length && addCloud}</div>
+      {form && <HabitForm goalId={goal.id} onClose={() => setForm(false)} />}
+    </div>
+  );
+}
+
+function reflectionsOpen(id: string): boolean {
+  try { return localStorage.getItem(`hg:refl:${id}`) === '1'; } catch { return false; }
+}
+function setReflectionsOpen(id: string, v: boolean) {
+  try { v ? localStorage.setItem(`hg:refl:${id}`, '1') : localStorage.removeItem(`hg:refl:${id}`); } catch { /* ignore */ }
+}
+
+export function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; open: Set<string>; toggle: (id: string) => void; onMove: (d: -1 | 1) => void; first: boolean; last: boolean }) {
   const { data, i, today, opt, save } = useApp();
   const [edit, setEdit] = useState(false);
   const [result, setResult] = useState(false);
   const n = goalProgress(goal.id, data, today, opt);
   const isOpen = open.has(goal.id);
+  const [refl, setRefl] = useState(() => reflectionsOpen(goal.id));
+  const points = data.goalPoints.filter((x) => x.goalId === goal.id && !x.deletedAt).length;
   const stop = (e: React.MouseEvent) => e.stopPropagation();
-  return (
-    <div className="camp" id={`goal-${goal.id}`}>
+  const card = (
       <div className={`goalcard${isOpen ? ' open' : ''}`} role="button" tabIndex={0} aria-expanded={isOpen}
         onClick={() => toggle(goal.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && (e.preventDefault(), toggle(goal.id))}>
         <div className="row between">
@@ -183,10 +295,19 @@ function Camp({ goal, open, toggle, onMove, first, last }: { goal: Goal; open: S
             <button className="btn small ghost" onClick={() => save('goals', { ...goal, status: 'archived' })}>{i.t('archive')}</button>
           </span>
         </div>
+        <button className="btn small reflections" aria-expanded={refl} onClick={(e) => { stop(e); setRefl(!refl); setReflectionsOpen(goal.id, !refl); }}>
+          {refl ? '▾' : '▸'} {i.t('reflections')} <span className="num">({points})</span>
+        </button>
       </div>
-      <div className="branches">
-        {BOXES.map((b) => <PointBoxView key={b} goal={goal} box={b} />)}
-      </div>
+  );
+  return (
+    <div className="camp" id={`goal-${goal.id}`}>
+      <Station goal={goal} card={card} />
+      {refl && (
+        <div className="branches">
+          {BOXES.map((b) => <PointBoxView key={b} goal={goal} box={b} />)}
+        </div>
+      )}
       {isOpen && (
         <div className="drill panel">
           <SubTree goal={goal} open={open} toggle={toggle} depth={1} />

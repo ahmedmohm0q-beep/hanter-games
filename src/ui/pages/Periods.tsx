@@ -11,6 +11,7 @@ import { Empty, Field, Trail, toast } from '../components/common';
 import { OccurrenceRow } from '../components/OccurrenceRow';
 import { GoalForm, TaskForm } from '../components/Forms';
 import { MetricCards } from './Analytics';
+import { Camp } from './Year';
 
 const LEVEL_OF: Record<PeriodType, GoalLevel | null> = { day: null, week: 'week', month: 'month', half: 'half', year: 'year' };
 
@@ -45,25 +46,28 @@ export function PeriodNav({ type, p, anchor, extra }: { type: PeriodType; p: Per
 }
 
 function PeriodGoals({ type, p }: { type: PeriodType; p: Period }) {
-  const { data, i } = useApp();
+  const { data, i, saveMany } = useApp();
   const [form, setForm] = useState(false);
+  const [open, setOpen] = useState<Set<string>>(new Set());
   const level = LEVEL_OF[type];
   if (!level) return null;
   const goals = aliveGoals(data).filter((g) => g.level === level && g.status !== 'archived' && (g.periodStart ? contains(p, g.periodStart) : contains(p, g.startDate)));
+  const toggle = (id: string) => setOpen((o) => { const n = new Set(o); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const move = (k: number, d: -1 | 1) => {
+    const a = goals[k], b = goals[k + d];
+    if (a && b) saveMany([{ table: 'goals', row: { ...a, sortOrder: b.sortOrder } }, { table: 'goals', row: { ...b, sortOrder: a.sortOrder === b.sortOrder ? a.sortOrder + d : a.sortOrder } }]);
+  };
   return (
-    <section className="panel">
-      <div className="row between"><h2>{i.t('goals_in_period')}</h2><button className="btn small" onClick={() => setForm(true)}>{i.t('add_in_period')}</button></div>
-      {!goals.length && <p className="muted small">{i.t('no_children')}</p>}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }} className="stack">
-        {goals.map((g) => {
-          return (
-            <li key={g.id} className="row between">
-              <a href={href('/year', { focus: g.id })}><bdi>{g.title}</bdi></a>
-              {g.deadline && <span className="chip num">{i.date(g.deadline)}</span>}
-            </li>
-          );
-        })}
-      </ul>
+    <section style={{ marginBottom: 18 }}>
+      <div className="row between" style={{ marginBottom: 12 }}>
+        <h2 style={{ margin: 0 }}>{i.t('goals_in_period')}</h2>
+        <button className="btn small primary" onClick={() => setForm(true)}>＋ {i.t('add_in_period')}</button>
+      </div>
+      {!goals.length ? <Empty>{i.t('no_children')}</Empty> : (
+        <div className="yeartrail">
+          {goals.map((g, k) => <Camp key={g.id} goal={g} open={open} toggle={toggle} onMove={(d) => move(k, d)} first={k === 0} last={k === goals.length - 1} />)}
+        </div>
+      )}
       {form && <GoalForm defaults={{ level, startDate: p.start, periodStart: p.start, deadline: lastDay(p) }} onClose={() => setForm(false)} />}
     </section>
   );
@@ -113,6 +117,7 @@ export function WeekPage({ date, monthStart }: { date: string; monthStart: strin
   return (
     <div className="page">
       <PeriodNav type="week" p={p} anchor={d} extra={month ? { month: month.start } : undefined} />
+      <PeriodGoals type="week" p={p} />
       {clip && <div className="banner" style={{ marginBottom: 12 }}>{i.t('week_in_month_note')} ({i.date(clip.start)} → {i.date(lastDay(clip))}) <a href={href(`/week/${p.start}`)}>{i.t('filter_all')}</a></div>}
       <MetricCards occ={occ} />
       <section className="panel">
@@ -136,7 +141,6 @@ export function WeekPage({ date, monthStart }: { date: string; monthStart: strin
           return <p key={o.key} className="small" style={{ marginBottom: 0 }}><bdi>{h?.title}</bdi>: {i.t('quota_progress', { a: o.amount, b: o.target })}</p>;
         })}
       </section>
-      <PeriodGoals type="week" p={p} />
       <ReviewPanel type="week" start={p.start} />
     </div>
   );
@@ -153,6 +157,7 @@ export function MonthPage({ date }: { date: string }) {
   return (
     <div className="page">
       <PeriodNav type="month" p={p} anchor={d} />
+      <PeriodGoals type="month" p={p} />
       <MetricCards occ={occ} />
       <section className="panel">
         <div className="monthgrid" role="grid" aria-label={i.t('nav_month')}>
@@ -185,7 +190,6 @@ export function MonthPage({ date }: { date: string }) {
           })}
         </div>
       </section>
-      <PeriodGoals type="month" p={p} />
       <ReviewPanel type="month" start={p.start} />
     </div>
   );
@@ -201,6 +205,7 @@ export function HalfPage({ date }: { date: string }) {
   return (
     <div className="page">
       <PeriodNav type="half" p={p} anchor={d} />
+      <PeriodGoals type="half" p={p} />
       <MetricCards occ={occ} />
       <section className="panel">
         <div className="grid three">
@@ -218,7 +223,6 @@ export function HalfPage({ date }: { date: string }) {
           })}
         </div>
       </section>
-      <PeriodGoals type="half" p={p} />
     </div>
   );
 }

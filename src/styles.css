@@ -185,12 +185,47 @@ textarea.input { min-height: 72px; resize: vertical; }
 .check.on { background: var(--green); border-color: var(--green); color: #0d1a13; }
 
 /* ---------- year trail page ---------- */
-.yeartrail { position: relative; max-width: 980px; margin: 0 auto; padding-block: 8px; }
+/* The road: two lines down the middle of the page; goals sit across it as stations. */
+.yeartrail { position: relative; max-width: 1080px; margin: 0 auto; padding-block: 8px; container-type: inline-size; }
 .yeartrail::before {
-  content: ''; position: absolute; inset-block: 0; inset-inline-start: 50%; width: 2px;
-  background: repeating-linear-gradient(to bottom, var(--line) 0 8px, transparent 8px 16px);
+  content: ''; position: absolute; inset-block: 0; inset-inline-start: calc(50% - 56px); width: 112px;
+  border-inline: 2px solid var(--line);
+  background: repeating-linear-gradient(to bottom, transparent 0 22px, color-mix(in srgb, var(--line) 55%, transparent) 22px 34px) center / 2px 100% no-repeat;
 }
-.camp { position: relative; margin: 0 auto 56px; display: flex; flex-direction: column; align-items: center; }
+.camp { position: relative; margin: 0 auto 64px; display: flex; flex-direction: column; align-items: center; }
+.station { position: relative; z-index: 1; width: 100%; }
+.branch-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.branch-lines path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; opacity: 0.75; }
+.branch-lines circle { fill: var(--muted); opacity: 0.75; }
+.clouds { display: contents; }
+/* phone: card on top, habit clouds in two columns underneath */
+.station { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 14px; }
+.station > .goalcard { order: -1; flex: 0 0 100%; max-width: 560px; }
+.station .cloud { flex: 0 1 calc(50% - 7px); }
+.cloud {
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  width: 100%; max-width: 200px; min-height: 92px; padding: 14px 16px; text-align: center; text-decoration: none; color: var(--text);
+  background: var(--raised); border: 2px solid var(--line); cursor: pointer;
+  border-radius: 46% 54% 52% 48% / 58% 50% 50% 42%;
+}
+.cloud:nth-child(even) { border-radius: 56% 44% 42% 58% / 46% 60% 40% 54%; }
+.cloud:hover { border-color: var(--green); }
+.cloud.done { border-color: var(--green); background: var(--green-soft); }
+.cloud.add { border-style: dashed; color: var(--muted); font-weight: 600; min-height: 64px; }
+.cloud-title { font-weight: 600; line-height: 1.35; }
+.cloud-cue { font-size: 0.78rem; color: var(--muted); }
+.cloud-meta { display: flex; gap: 6px; align-items: center; font-size: 0.8rem; }
+.reflections { margin-top: 10px; }
+/* wide: clouds on both sides of the road, branching from the card's sides */
+@container (min-width: 700px) {
+  .station { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 460px) minmax(0, 1fr); column-gap: clamp(28px, 5cqi, 56px); align-items: center; }
+  .station > .goalcard { grid-column: 2; grid-row: 1; max-width: none; }
+  .clouds { display: flex; flex-direction: column; gap: 26px; width: 100%; }
+  .clouds.side-a { grid-column: 1; grid-row: 1; align-items: flex-end; }
+  .clouds.side-b { grid-column: 3; grid-row: 1; align-items: flex-start; }
+  .station .cloud { flex: none; }
+  .clouds .cloud:nth-child(odd) { margin-inline-end: clamp(0px, 3cqi, 28px); }
+}
 .goalcard {
   position: relative; z-index: 1; width: min(560px, 100%); background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-l); padding: 18px 20px; box-shadow: var(--shadow); cursor: pointer; text-align: start;
@@ -227,7 +262,6 @@ textarea.input { min-height: 72px; resize: vertical; }
 .crumbs a { color: var(--muted); }
 
 @media (max-width: 760px) {
-  .yeartrail::before { inset-inline-start: 22px; }
   .branches { grid-template-columns: 1fr; padding-inline-start: 18px; border-inline-start: 2px solid var(--line); margin-top: 12px; }
   .branches::before { display: none; }
 }
