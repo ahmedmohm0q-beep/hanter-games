@@ -164,8 +164,8 @@ export function ConflictDialogs() {
     <Dialog title={i.t('conflict_title')} onClose={() => resolve(c, 'theirs')}>
       <p>{i.t('conflict_body')}</p>
       <div className="grid two">
-        <div className="panel"><h3>{i.t('conflict_mine')}</h3><bdi>{label(c.local)}</bdi></div>
-        <div className="panel"><h3>{i.t('conflict_theirs')}</h3><bdi>{label(c.server)}</bdi></div>
+        <div className="panel"><h3>{i.t('conflict_mine')}</h3><bdi>{label(c.local as unknown as Record<string, unknown>)}</bdi></div>
+        <div className="panel"><h3>{i.t('conflict_theirs')}</h3><bdi>{label(c.server as unknown as Record<string, unknown> | null)}</bdi></div>
       </div>
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
         <button className="btn" onClick={() => resolve(c, 'theirs')}>{i.t('conflict_theirs')}</button>

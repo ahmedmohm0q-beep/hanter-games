@@ -3,7 +3,8 @@ import type { AppData, EntityTable } from '../domain/types';
 import { emptyAppData, nowISO, TABLES } from './model';
 
 export type TableName = EntityTable | 'settings';
-export type AnyRow = { id: string; version: number; updatedAt: string; deletedAt?: string | null } & Record<string, unknown>;
+// Structural base shared by every stored row (interfaces like Task satisfy it without an index signature).
+export interface AnyRow { id: string; version: number; updatedAt: string; deletedAt?: string | null }
 
 export interface Mutation {
   mutationId: string; // idempotency key; a retry re-sends the same id

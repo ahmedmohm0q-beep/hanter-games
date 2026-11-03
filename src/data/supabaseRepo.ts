@@ -63,7 +63,7 @@ export class SupabaseRepo implements Repo {
   async write(m: Mutation): Promise<WriteResult> {
     if (!navigator.onLine) return { ok: false, kind: 'network', message: 'offline' };
     const table = SQL_TABLE[m.table];
-    const payload = { ...toDbRow(m.row), version: Math.max(1, m.baseVersion), last_mutation_id: m.mutationId, user_id: this.userId };
+    const payload = { ...toDbRow(m.row as unknown as Record<string, unknown>), version: Math.max(1, m.baseVersion), last_mutation_id: m.mutationId, user_id: this.userId };
     delete (payload as Record<string, unknown>).updated_at;
     const { data, error } = await this.client.from(table).upsert(payload, { onConflict: 'id' }).select().single();
     if (!error) return { ok: true, row: fromDbRow<AnyRow>(data) };
