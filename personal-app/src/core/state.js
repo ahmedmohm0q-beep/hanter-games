@@ -20,8 +20,10 @@ export function defaultState(now = new Date().toISOString()) {
     profile: { name: '', bio: '', city: '', occupation: '', avatar: null },
     settings: {
       appName: 'تطوّري',
-      passwordManagerUrl: '',
-      passwordManagerLabel: 'مدير كلمات المرور',
+      // افتراضي: Bitwarden (خطة مجانية مناسبة للموبايل والكمبيوتر). الرابط غير مُتحقَّق منه من الوثائق الرسمية
+      // في بيئة البناء؛ يمكن تغييره من الإعدادات في أي وقت.
+      passwordManagerUrl: 'https://vault.bitwarden.com/',
+      passwordManagerLabel: 'Bitwarden',
       displayCurrency: 'AED',
     },
     growth: { domains: [], points: [] },

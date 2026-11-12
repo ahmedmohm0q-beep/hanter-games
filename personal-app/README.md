@@ -202,7 +202,7 @@ APP_URL=http://127.0.0.1:8080 node tests/browser/smoke4.cjs   # نقاط الن�
   - https://developers.cloudflare.com/pages/platform/limits/
   - https://bitwarden.com/help/password-manager-plans/
   - https://proton.me/pass/pricing
-- **مدير كلمات المرور:** لم أحدد رابطًا افتراضيًا له، لأن الرابط يجب أن يكون الذي تختاره أنت (Bitwarden أو Proton Pass أو غيرهما بعد التحقق من خطته).
+- **مدير كلمات المرور:** الافتراضي Bitwarden برابط `https://vault.bitwarden.com/` من معرفتي العامة، **غير مُتحقَّق منه** من الوثائق الرسمية في بيئة البناء. تحقق من الرابط والخطة المجانية قبل الاعتماد، وغيّره من الإعدادات إن لزم.
 
 ---
 
