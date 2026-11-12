@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="تطوّري">
+  <rect width="512" height="512" rx="110" fill="#2f6f57"/>
+  <path d="M256 388V214" stroke="#dcefe6" stroke-width="28" stroke-linecap="round"/>
+  <path d="M256 236c-10-72-62-108-126-106 4 70 52 112 126 106z" fill="#b8862b"/>
+  <path d="M256 214c12-64 60-96 120-92-6 62-50 100-120 92z" fill="#dcefe6"/>
+</svg>

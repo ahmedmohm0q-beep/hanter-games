@@ -1,0 +1,16 @@
+{
+  "name": "تطوّري",
+  "short_name": "تطوّري",
+  "description": "تطوير الذات بالمستويات، وتنظيم الأفكار، وإدارة المال، وفهرسة الحسابات الرقمية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f1",
+  "theme_color": "#2f6f57",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
