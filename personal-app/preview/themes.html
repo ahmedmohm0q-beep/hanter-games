@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>قوالب تطوّري: معاينة</title>
+  <link rel="stylesheet" href="../css/app.css" />
+  <style>
+    body { padding: 16px; }
+    .intro { max-width: 1100px; margin: 0 auto 16px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: 1fr; max-width: 1200px; margin: 0 auto; }
+    @media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    .option { display: flex; flex-direction: column; gap: 6px; }
+    .option h2 { font-size: 1.05rem; margin: 0; }
+    .phone {
+      width: 100%; max-width: 390px; margin: 0 auto;
+      border: 1px solid #0003; border-radius: 22px; overflow: hidden;
+      background: var(--bg); color: var(--text);
+      box-shadow: 0 10px 30px #0002;
+    }
+    .phone .bottom-nav { position: static; border-radius: 0; }
+    .phone .page { padding: 12px 14px 14px; max-width: none; }
+    .phone .topbar { position: static; }
+    .phone .card { margin-bottom: 10px; }
+    .swatches { display: flex; gap: 6px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); }
+    .swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #0002; display: inline-block; }
+    .desc { font-size: 0.9rem; color: #555; margin: 0; min-height: 3.4em; }
+  </style>
+</head>
+<body>
+  <div class="intro">
+    <h1>ثلاثة قوالب لشكل التطبيق</h1>
+    <p class="hint">نفس المكوّنات والخطوط في كل قالب، والفرق في الألوان فقط. اختر واحدًا وسأطبّقه على التطبيق.</p>
+  </div>
+
+  <div class="grid">
+    <!-- القالب 1: زيتوني هادئ (الحالي) -->
+    <section class="option">
+      <h2>1. زيتوني هادئ (الحالي)</h2>
+      <p class="desc">أخضر زيتوني هادئ على خلفية فاتحة. قريب من شكل التطبيق الحالي.</p>
+      <div class="swatches">
+        <span class="swatch" style="background:#2f6f57"></span>
+        <span class="swatch" style="background:#b8862b"></span>
+        <span class="swatch" style="background:#f6f5f1"></span>
+        <span>أخضر · ذهبي · فاتح</span>
+      </div>
+      <div class="phone" style="--bg:#f6f5f1;--surface:#ffffff;--surface-2:#eef3ef;--text:#1e2a24;--muted:#5f6f66;--line:#d9e2dc;--brand:#2f6f57;--brand-ink:#ffffff;--brand-soft:#dcefe6;--gold:#b8862b;">
+        <header class="topbar"><div class="brand"><span class="logo">🌱</span><strong>تطوّري</strong></div><span class="sync-chip good">محفوظ في السحابة</span></header>
+        <main class="page">
+          <article class="card level-hero">
+            <span class="chip-status current">المستوى الحالي</span>
+            <h2>2. قراءة وتلخيص</h2>
+            <div class="progress-row big"><div class="bar"><span style="width:62%"></span></div><b>62%</b></div>
+            <div class="reward-line">🎁 المكافأة المنتظرة: <strong>عشاء خارج البيت</strong></div>
+          </article>
+          <article class="card">
+            <div class="tags"><span class="badge">بنك</span> <span class="badge good">جاهزة</span></div>
+            <strong>قراءة 20 دقيقة يوميًا</strong>
+            <div class="bank-actions"><button class="primary" type="button">إضافة إلى مستوى</button><button class="ghost" type="button">تعديل</button></div>
+          </article>
+        </main>
+        <nav class="bottom-nav"><a class="active" href="#"><span>🌱</span>تطوّري</a><a href="#"><span>💡</span>البنك</a><a href="#"><span>💰</span>أموالي</a><a href="#"><span>🔐</span>حساباتي</a></nav>
+      </div>
+    </section>
+
+    <!-- القالب 2: رملي دافئ -->
+    <section class="option">
+      <h2>2. رملي دافئ</h2>
+      <p class="desc">بنيّ دافئ وخلفية كريمية. أهدأ للعين وأقرب إلى الورق.</p>
+      <div class="swatches">
+        <span class="swatch" style="background:#8a5a2b"></span>
+        <span class="swatch" style="background:#c08a2c"></span>
+        <span class="swatch" style="background:#faf6ef"></span>
+        <span>بنيّ · عنبري · كريمي</span>
+      </div>
+      <div class="phone" style="--bg:#faf6ef;--surface:#fffdf8;--surface-2:#f5ecdd;--text:#2b2118;--muted:#7a6a58;--line:#e6d9c6;--brand:#8a5a2b;--brand-ink:#ffffff;--brand-soft:#f3e4cf;--gold:#c08a2c;">
+        <header class="topbar"><div class="brand"><span class="logo">🌱</span><strong>تطوّري</strong></div><span class="sync-chip good">محفوظ في السحابة</span></header>
+        <main class="page">
+          <article class="card level-hero">
+            <span class="chip-status current">المستوى الحالي</span>
+            <h2>2. قراءة وتلخيص</h2>
+            <div class="progress-row big"><div class="bar"><span style="width:62%"></span></div><b>62%</b></div>
+            <div class="reward-line">🎁 المكافأة المنتظرة: <strong>عشاء خارج البيت</strong></div>
+          </article>
+          <article class="card">
+            <div class="tags"><span class="badge">بنك</span> <span class="badge good">جاهزة</span></div>
+            <strong>قراءة 20 دقيقة يوميًا</strong>
+            <div class="bank-actions"><button class="primary" type="button">إضافة إلى مستوى</button><button class="ghost" type="button">تعديل</button></div>
+          </article>
+        </main>
+        <nav class="bottom-nav"><a class="active" href="#"><span>🌱</span>تطوّري</a><a href="#"><span>💡</span>البنك</a><a href="#"><span>💰</span>أموالي</a><a href="#"><span>🔐</span>حساباتي</a></nav>
+      </div>
+    </section>
+
+    <!-- القالب 3: ليلي هادئ -->
+    <section class="option">
+      <h2>3. ليلي هادئ</h2>
+      <p class="desc">نيلي هادئ على خلفية باردة فاتحة. واضح ومنظم، ومناسب لأجواء الإنتاجية.</p>
+      <div class="swatches">
+        <span class="swatch" style="background:#3b5bdb"></span>
+        <span class="swatch" style="background:#e0a526"></span>
+        <span class="swatch" style="background:#f4f6fb"></span>
+        <span>نيلي · أصفر · بارد</span>
+      </div>
+      <div class="phone" style="--bg:#f4f6fb;--surface:#ffffff;--surface-2:#eef1fb;--text:#1d2233;--muted:#5b6378;--line:#dde2f0;--brand:#3b5bdb;--brand-ink:#ffffff;--brand-soft:#e0e7ff;--gold:#e0a526;">
+        <header class="topbar"><div class="brand"><span class="logo">🌱</span><strong>تطوّري</strong></div><span class="sync-chip good">محفوظ في السحابة</span></header>
+        <main class="page">
+          <article class="card level-hero">
+            <span class="chip-status current">المستوى الحالي</span>
+            <h2>2. قراءة وتلخيص</h2>
+            <div class="progress-row big"><div class="bar"><span style="width:62%"></span></div><b>62%</b></div>
+            <div class="reward-line">🎁 المكافأة المنتظرة: <strong>عشاء خارج البيت</strong></div>
+          </article>
+          <article class="card">
+            <div class="tags"><span class="badge">بنك</span> <span class="badge good">جاهزة</span></div>
+            <strong>قراءة 20 دقيقة يوميًا</strong>
+            <div class="bank-actions"><button class="primary" type="button">إضافة إلى مستوى</button><button class="ghost" type="button">تعديل</button></div>
+          </article>
+        </main>
+        <nav class="bottom-nav"><a class="active" href="#"><span>🌱</span>تطوّري</a><a href="#"><span>💡</span>البنك</a><a href="#"><span>💰</span>أموالي</a><a href="#"><span>🔐</span>حساباتي</a></nav>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
