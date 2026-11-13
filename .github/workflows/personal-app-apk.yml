@@ -26,7 +26,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Prepare web folder (no build step: the app is static)
+      - name: "Prepare web folder (no build step, the app is static)"
         run: |
           mkdir -p apk-build/www
           cp -r personal-app/. apk-build/www/
