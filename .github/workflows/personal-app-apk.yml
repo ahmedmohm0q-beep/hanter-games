@@ -1,0 +1,59 @@
+# يبني APK لتطبيق تطوّري (مجلد personal-app/) ويرفعه كـ artifact قابل للتنزيل.
+# يشتغل عند الدفع للفرع ده، أو يدويًا من تبويب Actions.
+# الـAPK موقّع بمفتاح debug (زي باقي بناءات المشروع): لازم تسمح بالتثبيت من مصادر غير معروفة على الأندرويد.
+name: Build tatawwur APK
+
+on:
+  push:
+    branches: [ccr-6eef227b-oe8pig]
+    paths:
+      - 'personal-app/**'
+      - '.github/workflows/personal-app-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Prepare web folder (no build step: the app is static)
+        run: |
+          mkdir -p apk-build/www
+          cp -r personal-app/. apk-build/www/
+          rm -rf apk-build/www/tests apk-build/www/scripts apk-build/www/preview apk-build/www/dist apk-build/www/README.md apk-build/www/supabase
+          cd apk-build
+          cat > capacitor.config.json <<'JSON'
+          {
+            "appId": "com.ahmed.tatawwur",
+            "appName": "تطوّري",
+            "webDir": "www",
+            "android": { "allowMixedContent": false }
+          }
+          JSON
+          npm init -y >/dev/null
+          npm install --no-save --no-audit --no-fund @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+      - name: Wrap in Android project (Capacitor)
+        working-directory: apk-build
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Build debug APK
+        working-directory: apk-build/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/tatawwur.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tatawwur-apk
+          path: tatawwur.apk
