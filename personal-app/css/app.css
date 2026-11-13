@@ -1,5 +1,6 @@
 /* تطوّري: تصميم عربي RTL، الموبايل أولًا، ألوان بالرموز (tokens) مع وضع داكن. */
-:root {
+/* الوضع الافتراضي داكن (من تصميم C: ليل هادئ). الفاتح يُفعَّل بـ data-theme="light". */
+:root[data-theme="light"] {
   --bg: #f6f5f1;
   --surface: #ffffff;
   --surface-2: #eef3ef;
@@ -21,45 +22,23 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #101713;
-    --surface: #17211c;
-    --surface-2: #1d2a24;
-    --text: #e8efeb;
-    --muted: #9db0a5;
-    --line: #2c3d35;
-    --brand: #6fbf9b;
-    --brand-ink: #0b1510;
-    --brand-soft: #1f3a2f;
-    --gold: #e0b35a;
-    --warn: #f0b36a;
-    --warn-soft: #3a2a14;
-    --danger: #ff8a8f;
-    --good: #7fd29d;
-    --good-soft: #1b3524;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #101713;
-  --surface: #17211c;
-  --surface-2: #1d2a24;
-  --text: #e8efeb;
-  --muted: #9db0a5;
-  --line: #2c3d35;
-  --brand: #6fbf9b;
-  --brand-ink: #0b1510;
-  --brand-soft: #1f3a2f;
-  --gold: #e0b35a;
-  --warn: #f0b36a;
-  --warn-soft: #3a2a14;
-  --danger: #ff8a8f;
-  --good: #7fd29d;
-  --good-soft: #1b3524;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+:root, :root[data-theme="dark"] {
+  --bg: #0d121c;
+  --surface: #151c2b;
+  --surface-2: #1c2536;
+  --text: #e7ecf5;
+  --muted: #8e9ab0;
+  --line: #26324a;
+  --brand: #4fd1b0;
+  --brand-ink: #0d121c;
+  --brand-soft: #173a36;
+  --gold: #f5b84b;
+  --warn: #f5b84b;
+  --warn-soft: rgba(245, 184, 75, 0.12);
+  --danger: #ff7a7a;
+  --good: #4fd1b0;
+  --good-soft: rgba(79, 209, 176, 0.14);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
 
@@ -70,7 +49,7 @@ html, body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", "Geeza Pro", system-ui, sans-serif;
+  font-family: "Readex Pro", "Segoe UI", Tahoma, "Noto Sans Arabic", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
@@ -108,6 +87,11 @@ bdi { unicode-bidi: isolate; }
 .logo.big { font-size: 2.6rem; text-align: center; }
 .icon-link { font-size: 1.25rem; text-decoration: none; padding: 6px 8px; border-radius: 10px; }
 .icon-link.active { background: var(--brand-soft); }
+.theme-btn {
+  width: 38px; height: 38px; min-height: 38px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text);
+}
 
 .sync-chip {
   font-size: 0.8rem; padding: 3px 10px; border-radius: 999px;
@@ -228,7 +212,7 @@ input.num { width: 7.5em; text-align: center; direction: ltr; }
 .tab.active { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-weight: 700; }
 
 .bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); flex: 1; }
-.bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--gold)); border-radius: 999px; transition: width .5s ease; }
+.bar span { display: block; height: 100%; background: var(--brand); border-radius: 999px; transition: width .5s ease; }
 .progress-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
 .progress-row.big .bar { height: 16px; }
 .progress-row b { min-width: 3.2em; text-align: start; font-variant-numeric: tabular-nums; }

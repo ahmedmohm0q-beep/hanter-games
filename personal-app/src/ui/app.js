@@ -1,6 +1,7 @@
 import { ctx, ui, PAGES } from './ctx.js';
 import { esc, formData } from './util.js';
 import { closeModal, showFormError, toast } from './modal.js';
+import { currentTheme, toggleTheme, themeIconSvg } from './theme.js';
 import { errMsg } from './run.js';
 import { renderGrowth, handlers as hGrowth } from './pages/growth.js';
 import { renderBank, handlers as hBank } from './pages/bank.js';
@@ -26,6 +27,10 @@ const FORMS = Object.assign({}, ...ALL.map((h) => h.forms));
 const CHANGES = Object.assign({}, ...ALL.map((h) => h.changes));
 
 const COMMON_ACTS = {
+  'theme-toggle'() {
+    toggleTheme();
+    return true;
+  },
   'close-modal'() {
     if (window.__confirmResolve) window.__confirmResolve(false);
     closeModal();
@@ -116,6 +121,7 @@ export function renderApp() {
     <header class="topbar">
       <div class="brand"><span class="logo" aria-hidden="true">🌱</span><strong>${name}</strong></div>
       ${syncChip(store)}
+      <button type="button" class="theme-btn" data-act="theme-toggle" aria-label="${currentTheme() === 'dark' ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}">${themeIconSvg(currentTheme())}</button>
       <a class="icon-link ${page === 'settings' ? 'active' : ''}" href="#/settings" aria-label="الإعدادات">⚙️</a>
     </header>
     ${banner(store)}

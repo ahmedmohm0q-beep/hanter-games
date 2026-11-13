@@ -3,6 +3,9 @@ import { createCloud } from './data/cloud.js';
 import { AppStore } from './data/store.js';
 import { ctx } from './ui/ctx.js';
 import { renderApp, mountDispatchers } from './ui/app.js';
+import { applyTheme, currentTheme } from './ui/theme.js';
+
+applyTheme(currentTheme());
 
 const cfg = window.PERSONAL_APP_CONFIG || {};
 ctx.cloud = createCloud({ url: cfg.supabaseUrl || '', anonKey: cfg.supabaseAnonKey || '' });

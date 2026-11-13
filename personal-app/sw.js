@@ -1,6 +1,6 @@
 // Service Worker بسيط: يخزّن واجهة التطبيق (الملفات الثابتة) فقط.
 // لا يخزّن أي بيانات مالية أو شخصية ولا استجابات Supabase، لأن البيانات تُقرأ دائمًا من الخادم أو من التخزين المحلي للتطبيق.
-const VERSION = 'taawur-shell-v1';
+const VERSION = 'taawur-shell-v2';
 const SHELL = [
   './',
   './index.html',
@@ -28,6 +28,7 @@ const SHELL = [
   './src/ui/util.js',
   './src/ui/modal.js',
   './src/ui/run.js',
+  './src/ui/theme.js',
   './src/ui/pages/growth.js',
   './src/ui/pages/bank.js',
   './src/ui/pages/journey.js',
