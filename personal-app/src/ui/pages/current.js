@@ -1,5 +1,7 @@
 import { ctx } from '../ctx.js';
-import { esc, pct, bar, badge, emptyState, formData, compressImage } from '../util.js';
+import { esc, pct, bar, badge, emptyState, formData, compressImage, options } from '../util.js';
+import { todayISO } from '../../core/dates.js';
+import { addHabit, setHabitAmount, setHabitArchived, habitsOverview } from '../../core/habits.js';
 import { openModal, toast } from '../modal.js';
 import { runForm, runAction } from '../run.js';
 import { newId } from '../../core/state.js';
@@ -91,7 +93,7 @@ function noCurrent(state) {
   return emptyState('لا يوجد مستوى حالي', 'أضف تحدّيًا إلى مستوى قادم ليصبح المستوى الحالي تلقائيًا.', '<a class="btn primary" href="#/journey">إعداد الرحلة</a>');
 }
 
-export function renderCurrent(state) {
+function renderCurrentInner(state) {
   const level = currentLevel(state);
   if (!level) return noCurrent(state);
   const target = state.plan.targetLevels;
@@ -120,6 +122,51 @@ export function renderCurrent(state) {
       : `<ul class="current-list">${active.map((c) => challengeCard(state, level, c)).join('')}</ul>`}`;
 }
 
+// قسم العادات: التذكير اليومي داخل التطبيق + تسجيل كمية اليوم + إضافة عادة مربوطة بتحدٍّ.
+function habitsSection(state) {
+  const today = todayISO();
+  const list = habitsOverview(state, today);
+  const cur = currentLevel(state);
+  const numeric = cur ? (cur.challenges || []).filter((c) => c.type === 'numeric' && c.status !== 'replaced') : [];
+  const rows = list.length
+    ? list
+        .map((h) => {
+          const linked = h.linkedChallengeId ? numeric.find((c) => c.id === h.linkedChallengeId) : null;
+          return `<li class="habit-row">
+            <div class="habit-head"><strong>${esc(h.title)}</strong><span class="hint small">${h.doneDays} من ${h.weeklyTarget} أيام هذا الأسبوع</span></div>
+            ${bar(h.progress, h.title)}
+            <div class="habit-actions">
+              <label class="num-row">كمية اليوم
+                <input class="num" inputmode="decimal" value="${esc(h.todayAmount)}" data-change="habit-amount" data-id="${esc(h.id)}" aria-label="كمية اليوم لـ ${esc(h.title)}" />
+              </label>
+              ${linked ? badge(`تُحسب في: ${linked.title}`) : ''}
+              <button type="button" class="ghost" data-act="habit-archive" data-id="${esc(h.id)}">أرشفة</button>
+            </div>
+          </li>`;
+        })
+        .join('')
+    : '<li class="hint">لا توجد عادات بعد. أضف عادة تقسّم هدفك لخطوات يومية.</li>';
+  const daysOpts = [1, 2, 3, 4, 5, 6, 7]
+    .map((n) => `<option value="${n}" ${n === 7 ? 'selected' : ''}>${n === 7 ? 'كل يوم' : `${n} أيام`}</option>`)
+    .join('');
+  const linkOpts = options(numeric.map((c) => ({ id: c.id, name: c.title })), '', { empty: 'بدون ربط' });
+  return `<article class="card">
+    <div class="card-head"><h3>العادات</h3></div>
+    <ul class="plain habits">${rows}</ul>
+    <form data-form="habit-add" class="form-grid">
+      <label>اسم العادة<input name="title" maxlength="200" required placeholder="مثال: قراءة صفحات" /></label>
+      <label>عدد الأيام في الأسبوع<select name="weeklyTarget">${daysOpts}</select></label>
+      <label class="wide">ربط بتحدٍّ رقمي في المستوى الحالي (اختياري)<select name="linkChallengeId">${linkOpts}</select></label>
+      <p class="hint wide">الكمية اليومية تُجمع. لو العادة مربوطة بتحدٍّ، التحدي يتحدّث تلقائيًا. التذكير داخل التطبيق فقط، بدون إشعارات في الخلفية.</p>
+      <div class="wide actions-end"><button class="primary" type="submit">إضافة العادة</button></div>
+    </form>
+  </article>`;
+}
+
+export function renderCurrent(state) {
+  return habitsSection(state) + renderCurrentInner(state);
+}
+
 // تسجيل تقدم مع تهنئة عند اكتمال مستوى فعلًا.
 function recordProgress(mutator) {
   const before = completedLevels(ctx.store.state).length;
@@ -133,6 +180,9 @@ function recordProgress(mutator) {
 
 export const handlers = {
   acts: {
+    'habit-archive'(el) {
+      runAction(() => ctx.store.update((s) => setHabitArchived(s, el.dataset.id, true)), 'أُرشفت العادة');
+    },
     'ch-toggle'(el) {
       const value = el.dataset.value === '1';
       recordProgress((s) => setChallengeDone(s, el.dataset.level, el.dataset.id, value));
@@ -151,6 +201,17 @@ export const handlers = {
     },
   },
   forms: {
+    'habit-add'(form) {
+      const d = formData(form);
+      runForm(
+        form,
+        () =>
+          ctx.store.update((s) =>
+            addHabit(s, { title: d.title, weeklyTarget: d.weeklyTarget, linkChallengeId: d.linkChallengeId || null }, newId),
+          ),
+        { keepOpen: true, successMessage: 'أُضيفت العادة' },
+      );
+    },
     async 'ev-add'(form) {
       const d = formData(form);
       try {
@@ -171,6 +232,15 @@ export const handlers = {
     },
   },
   changes: {
+    'habit-amount'(el) {
+      const raw = normalizeDigits(el.value).trim();
+      const n = Number(raw === '' ? 0 : raw);
+      if (!Number.isFinite(n) || n < 0) {
+        toast('أدخل رقمًا صفرًا أو أكبر', 'error');
+        return false;
+      }
+      runAction(() => ctx.store.update((s) => setHabitAmount(s, el.dataset.id, todayISO(), n)));
+    },
     'ch-num'(el) {
       const raw = normalizeDigits(el.value).trim();
       const n = Number(raw === '' ? 0 : raw);

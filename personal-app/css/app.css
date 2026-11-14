@@ -290,6 +290,9 @@ ul.log li { font-size: 0.92rem; }
 .reward-line { background: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--surface)); padding: 10px 12px; border-radius: 12px; margin-top: 10px; }
 .evidence-box { margin-top: 10px; }
 .evidence { padding-inline-start: 18px; }
+.habit-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.habit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.habit-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; vertical-align: middle; border: 1px solid var(--line); }
 .part { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 0 0 10px; display: grid; gap: 8px; }
 .part legend { color: var(--muted); padding: 0 6px; }

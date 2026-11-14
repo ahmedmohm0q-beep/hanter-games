@@ -32,6 +32,7 @@ export function defaultState(now = new Date().toISOString()) {
     awards: [],
     log: [],
     services: [],
+    habits: [],
     finance: {
       spaces: [
         { id: personalSpaceId, name: 'مالي الشخصي', kind: 'personal' },
@@ -56,6 +57,7 @@ const ARRAY_KEYS = [
   ['awards'],
   ['log'],
   ['services'],
+  ['habits'],
   ['growth', 'domains'],
   ['growth', 'points'],
   ['plan', 'levels'],

@@ -87,6 +87,7 @@ APP_URL=http://127.0.0.1:8080 node tests/browser/smoke.cjs    # المستوى �
 APP_URL=http://127.0.0.1:8080 node tests/browser/smoke2.cjs   # الديون والميزانية والالتزامات والنسخ الاحتياطي والاستعادة
 APP_URL=http://127.0.0.1:8080 node tests/browser/smoke3.cjs   # تسجيل الدخول والمزامنة الأولى (طلبات Supabase مُحاكاة)
 APP_URL=http://127.0.0.1:8080 node tests/browser/smoke4.cjs   # نقاط النمو، البنك المتقدم، توزيع الهدف، المطابقة، تعديل العملية، الحسابات الرقمية
+APP_URL=http://127.0.0.1:8080 node tests/browser/smoke5.cjs   # العادات: هدف يتقسم لعادة، والعادة تحدّث تقدم التحدي تلقائيًا
 ```
 
 ---

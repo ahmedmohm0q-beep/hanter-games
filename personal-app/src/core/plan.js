@@ -13,6 +13,7 @@ import {
 } from './levels.js';
 import { requireText, optionalText, isSafeHttpUrl } from './text.js';
 import { newId } from './state.js';
+import { syncHabitLinks } from './habits.js';
 
 // --- بحث وأدوات مساعدة ---
 export function sortedLevels(state) {
@@ -479,6 +480,8 @@ export function completeIfReady(state, now = new Date().toISOString()) {
 
 // تشغيل الترقية حتى تستقر الحالة. لا تُكمل مستويات فارغة أو غير مكتملة.
 export function settlePlan(state, now = new Date().toISOString()) {
+  // تقدم التحديات المربوطة بالعادات يُحدَّث أولًا، قبل فحص الترقية.
+  syncHabitLinks(state);
   for (let i = 0; i < 1000; i++) {
     ensureCurrentLevel(state);
     if (!completeIfReady(state, now)) break;
