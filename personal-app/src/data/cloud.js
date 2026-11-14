@@ -34,11 +34,12 @@ export function createCloud({ url, anonKey, fetchImpl = globalThis.fetch.bind(gl
   const configured = Boolean(base && anonKey && /^https?:\/\//.test(base));
   let session = configured ? readSession() : null;
 
-  const headers = (token) => ({
-    apikey: anonKey,
-    Authorization: `Bearer ${token || anonKey}`,
-    'Content-Type': 'application/json',
-  });
+  // المفتاح المنشور يُرسل في apikey. Authorization يُرسل فقط مع رمز الجلسة (JWT) بعد الدخول.
+  const headers = (token) => {
+    const h = { apikey: anonKey, 'Content-Type': 'application/json' };
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  };
 
   async function parse(res) {
     const text = await res.text();
